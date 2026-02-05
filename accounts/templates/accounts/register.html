@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="fr">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>QRoom - Créer un compte</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13b6ec",
+                        "background-dark": "#101d22",
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"] },
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-card { background: rgba(28, 36, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(59, 77, 84, 0.5); }
+    </style>
+</head>
+<body class="bg-background-dark min-h-screen font-display">
+<div class="flex flex-col min-h-screen lg:flex-row">
+    <div class="hidden lg:flex lg:w-1/2 relative items-center justify-center p-12 overflow-hidden bg-background-dark">
+        <div class="absolute inset-0 opacity-20 pointer-events-none">
+            <div class="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/20 blur-[120px]"></div>
+        </div>
+        <div class="relative z-10 text-center max-w-md">
+            <div class="flex items-center justify-center gap-3 mb-8 text-primary">
+                <div class="size-12">
+                    <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><path d="M36.7273 44C33.9891 44 31.6043 39.8386 30.3636 33.69C29.123 39.8386 26.7382 44 24 44C21.2618 44 18.877 39.8386 17.6364 33.69C16.3957 39.8386 14.0109 44 11.2727 44C7.25611 44 4 35.0457 4 24C4 12.9543 7.25611 4 11.2727 4C14.0109 4 16.3957 8.16144 17.6364 14.31C18.877 8.16144 21.2618 4 24 4C26.7382 4 29.123 8.16144 30.3636 14.31C31.6043 8.16144 33.9891 4 36.7273 4C40.7439 4 44 12.9543 44 24C44 35.0457 40.7439 44 36.7273 44Z" fill="currentColor"></path></svg>
+                </div>
+                <h1 class="text-white text-4xl font-bold tracking-tight">QRoom</h1>
+            </div>
+            <h2 class="text-white text-3xl font-bold mb-4">Rejoignez l'aventure.</h2>
+            <p class="text-[#9db2b9]">Commencez à engager votre audience dès aujourd'hui.</p>
+        </div>
+    </div>
+
+    <div class="flex-1 flex flex-col items-center justify-center p-6 lg:p-12">
+        <div class="w-full max-w-md glass-card rounded-xl p-8 shadow-2xl">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-white mb-2">Créer un compte</h2>
+                <p class="text-[#9db2b9]">C'est gratuit et ça prend 30 secondes</p>
+            </div>
+
+            <form class="space-y-5" method="POST">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-sm font-medium text-white mb-2">Nom d'utilisateur</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9db2b9] text-xl">person</span>
+                        <input name="username" class="w-full pl-10 pr-4 py-3 rounded-lg bg-[#1c2427] border border-[#3b4d54] text-white focus:border-primary outline-none" placeholder="john_doe" type="text" required/>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-white mb-2">Email</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9db2b9] text-xl">mail</span>
+                        <input name="email" class="w-full pl-10 pr-4 py-3 rounded-lg bg-[#1c2427] border border-[#3b4d54] text-white focus:border-primary outline-none" placeholder="nom@exemple.com" type="email" required/>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-white mb-2">Mot de passe</label>
+                    <div class="relative">
+                        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9db2b9] text-xl">lock</span>
+                        <input name="password" class="w-full pl-10 pr-4 py-3 rounded-lg bg-[#1c2427] border border-[#3b4d54] text-white focus:border-primary outline-none" placeholder="••••••••" type="password" required/>
+                    </div>
+                </div>
+                <button class="w-full bg-primary hover:brightness-110 text-background-dark font-bold py-3 px-4 rounded-lg transition-all" type="submit">
+                    S'inscrire
+                </button>
+            </form>
+
+            <div class="relative my-8">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-[#3b4d54]"></div></div>
+                <div class="relative flex justify-center text-sm"><span class="px-2 bg-[#1c2427] text-[#9db2b9]">Ou s'inscrire avec</span></div>
+            </div>
+
+            <button class="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
+                <img alt="G" class="w-5 h-5" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
+                Google
+            </button>
+
+            <p class="mt-8 text-center text-sm text-[#9db2b9]">
+                Déjà un compte ? 
+                <a href="{% url 'login' %}" class="text-primary font-semibold hover:underline">Se connecter</a>
+            </p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,49 @@
+<section class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 space-y-4">
+    <h2 class="text-lg font-bold">Poser une question</h2>
+    <div class="space-y-3">
+        <input type="text" id="author_name" placeholder="Votre nom (optionnel)" 
+            class="w-full p-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary text-slate-900">
+        <textarea id="question_text" rows="3" placeholder="Quelle est votre question ?" 
+                class="w-full p-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-primary text-slate-900"></textarea>
+        
+        <button onclick="sendQuestion()" id="sendBtn" class="w-full py-4 bg-primary text-white font-bold rounded-xl shadow-lg shadow-primary/30 active:scale-95 transition-all flex justify-center items-center gap-2">
+            <span>Envoyer au speaker</span>
+            <span class="material-symbols-outlined text-sm">send</span>
+        </button>
+    </div>
+</section>
+
+<script>
+function sendQuestion() {
+    const text = document.getElementById('question_text').value;
+    const author = document.getElementById('author_name').value;
+    const btn = document.getElementById('sendBtn');
+
+    if(!text) return alert("Écris quelque chose !");
+
+    btn.disabled = true;
+    btn.innerText = "Envoi...";
+
+    fetch("{% url 'submit_question' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}",
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ text: text, author: author })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.status === "success") {
+            document.getElementById('question_text').value = "";
+            btn.innerText = "Envoyé ! ✅";
+            btn.classList.replace('bg-primary', 'bg-green-500');
+            setTimeout(() => {
+                btn.disabled = false;
+                btn.innerText = "Envoyer au speaker";
+                btn.classList.replace('bg-green-500', 'bg-primary');
+            }, 3000);
+        }
+    });
+}
+</script>

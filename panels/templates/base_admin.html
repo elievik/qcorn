@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html class="dark" lang="fr">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>QRoom - {% block title %}{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13b6ec",
+                        "background-light": "#f6f8f8",
+                        "background-dark": "#101d22",
+                    },
+                    fontFamily: { "display": ["Inter"] },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-item-active {
+            background-color: rgba(19, 182, 236, 0.1);
+            border-left: 4px solid #13b6ec;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased font-display">
+    <div class="flex min-h-screen">
+        <aside class="w-72 bg-white dark:bg-[#0b1418] border-r border-slate-200 dark:border-slate-800 flex flex-col fixed h-full z-50">
+            <div class="p-6">
+                <div class="flex items-center gap-3">
+                    <div class="bg-primary p-2 rounded-lg text-white">
+                        <span class="material-symbols-outlined font-bold">forum</span>
+                    </div>
+                    <h1 class="text-slate-900 dark:text-white text-lg font-bold">QRoom Admin</h1>
+                </div>
+            </div>
+
+            <nav class="flex-1 px-3 space-y-1">
+                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'dashboard' %}sidebar-item-active text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-800/50{% endif %}">
+                    <span class="material-symbols-outlined">dashboard</span>
+                    <span class="text-sm font-semibold">Dashboard</span>
+                </a>
+
+                <a href="{% url 'questions_manage' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'questions_manage' %}sidebar-item-active text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-800/50{% endif %}">
+                    <span class="material-symbols-outlined">forum</span>
+                    <span class="text-sm font-medium">Questions</span>
+                </a>
+
+                <a href="{% url 'themes' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'themes' %}sidebar-item-active text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-800/50{% endif %}">
+                    <span class="material-symbols-outlined">palette</span>
+                    <span class="text-sm font-medium">Thèmes & Vote</span>
+                </a>
+
+                <a href="{% url 'projection' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'projection' %}sidebar-item-active text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-800/50{% endif %}">
+                    <span class="material-symbols-outlined">tv</span>
+                    <span class="text-sm font-medium">Projection</span>
+                </a>
+            </nav>
+
+            <div class="px-3 py-2 border-t border-slate-200 dark:border-slate-800">
+                <form action="{% url 'logout' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors group">
+                        <span class="material-symbols-outlined group-hover:rotate-180 transition-transform">logout</span>
+                        <span class="text-sm font-semibold">Déconnexion</span>
+                    </button>
+                </form>
+            </div>
+
+            <div class="p-4 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-3 p-2 rounded-lg">
+                    <div class="size-10 rounded-full border-2 border-primary bg-slate-700 flex-shrink-0"></div>
+                    <div class="flex flex-col overflow-hidden text-left">
+                        <span class="text-sm font-bold truncate text-slate-900 dark:text-white">{{ user.username }}</span>
+                        <span class="text-xs text-slate-400 truncate">{{ user.email }}</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 ml-72 min-h-screen">
+            <header class="sticky top-0 z-40 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-bold">Bonjour, {{ user.username }} 👋</h2>
+                    <div class="flex items-center gap-4">
+                        <button class="p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg">
+                            <span class="material-symbols-outlined">notifications</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="p-8 max-w-7xl mx-auto">
+                {% block content %}
+                {% endblock %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

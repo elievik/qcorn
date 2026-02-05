@@ -1,0 +1,131 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Dashboard Admin{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <section class="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-[#1a2e36] dark:to-[#101d22] rounded-xl p-8 text-white relative overflow-hidden shadow-2xl">
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div class="space-y-2">
+                <h3 class="text-3xl font-black tracking-tight">Prêt pour votre prochain événement ?</h3>
+                <p class="text-slate-300 max-w-md">Créez un nouvel espace interactif en quelques secondes et commencez à engager votre audience en temps réel.</p>
+            </div>
+            <button onclick="toggleModal()" class="flex items-center justify-center gap-3 px-8 py-4 bg-primary hover:bg-primary/90 text-[#111618] font-bold text-lg rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined text-2xl">add_circle</span>
+                <span>+ Créer un lien de panel</span>
+            </button>
+        </div>
+        <div class="absolute right-0 top-0 opacity-10 pointer-events-none">
+            <span class="material-symbols-outlined text-[240px] rotate-12">bubble_chart</span>
+        </div>
+    </section>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 p-6 rounded-xl flex items-center gap-4">
+            <div class="size-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <span class="material-symbols-outlined text-3xl">groups</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Total Participants</p>
+                <p class="text-2xl font-bold">{{ total_participants|default:"0" }}</p>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 p-6 rounded-xl flex items-center gap-4">
+            <div class="size-12 rounded-lg bg-green-500/10 text-green-500 flex items-center justify-center">
+                <span class="material-symbols-outlined text-3xl">question_answer</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Questions Posées</p>
+                <p class="text-2xl font-bold">{{ total_questions|default:"0" }}</p>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 p-6 rounded-xl flex items-center gap-4">
+            <div class="size-12 rounded-lg bg-yellow-500/10 text-yellow-500 flex items-center justify-center">
+                <span class="material-symbols-outlined text-3xl">electric_bolt</span>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Panels Actifs</p>
+                <p class="text-2xl font-bold">{{ total_panels|default:"0" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold tracking-tight">Panels créés</h2>
+            <button class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium flex items-center gap-2">
+                <span class="material-symbols-outlined text-base">filter_list</span>
+                Filtrer
+            </button>
+        </div>
+        
+        <div class="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+            <table class="w-full text-left">
+                <thead class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800">
+                    <tr>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nom du Panel</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Créé le</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Participants</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                    {% for panel in panels %}
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-slate-900 dark:text-white">{{ panel.title }}</span>
+                                <span class="text-xs text-slate-500 dark:text-slate-400">qroom.io/p/{{ panel.unique_id|slice:":8" }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ panel.created_at|date:"d M, Y" }}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-bold {% if panel.status == 'active' %}bg-green-500/20 text-green-400{% else %}bg-slate-800 text-slate-400{% endif %}">
+                                <span class="size-1.5 rounded-full {% if panel.status == 'active' %}bg-green-500 animate-pulse{% else %}bg-slate-500{% endif %}"></span>
+                                {{ panel.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm font-medium">0</td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button class="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"><span class="material-symbols-outlined text-xl">settings</span></button>
+                                <button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><span class="material-symbols-outlined text-xl">visibility</span></button>
+                                <button class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><span class="material-symbols-outlined text-xl">delete</span></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-slate-500 italic">Aucun panel créé pour le moment.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="createPanelModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+        <div class="p-6 border-b border-slate-800 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-white">Nouveau Panel</h3>
+            <button onclick="toggleModal()" class="text-slate-400 hover:text-white"><span class="material-symbols-outlined">close</span></button>
+        </div>
+        <form action="{% url 'create_panel' %}" method="POST" class="p-6 space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-medium text-slate-300 mb-2">Nom de l'événement</label>
+                <input type="text" name="title" required class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ex: Ma conférence tech">
+            </div>
+            <button type="submit" class="w-full py-3 bg-primary text-slate-900 font-bold rounded-xl hover:brightness-110 transition-all">Créer le salon</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    function toggleModal() {
+        document.getElementById('createPanelModal').classList.toggle('hidden');
+    }
+</script>
+{% endblock %}
