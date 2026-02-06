@@ -68,15 +68,16 @@
                 <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
                     {% for panel in panels %}
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
-                        <td class="px-6 py-4">
+                       <td class="px-6 py-4">
                             <div class="flex flex-col">
                                 <span class="font-semibold text-slate-900 dark:text-white">{{ panel.title }}</span>
                                 <div class="flex items-center gap-3 mt-1.5">
-                                    <button onclick="copyToClipboard('qroom.io/p/{{ panel.unique_id|slice:':8' }}', 'btn-{{ panel.id }}')" id="btn-{{ panel.id }}" class="flex items-center gap-1.5 text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary px-2 py-1 rounded transition-colors">
-                                        qroom.io/p/{{ panel.unique_id|slice:":8" }}
+                                    <button onclick="copyToClipboard('{{ panel.public_url }}')" class="flex items-center gap-1.5 text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary px-2 py-1 rounded transition-colors">
+                                        Lien de participation
                                         <span class="material-symbols-outlined text-[14px]">content_copy</span>
                                     </button>
-                                    <button onclick="openQR('{{ panel.unique_id|slice:':8' }}', '{{ panel.title|escapejs }}')" class="text-slate-400 hover:text-primary flex items-center" title="Afficher le QR Code">
+                                    
+                                    <button onclick="openQR('{{ panel.qr_code }}', '{{ panel.title|escapejs }}')" class="text-slate-400 hover:text-primary flex items-center" title="Afficher le QR Code">
                                         <span class="material-symbols-outlined text-lg">qr_code_2</span>
                                     </button>
                                 </div>
@@ -111,7 +112,7 @@
                                     <span class="material-symbols-outlined text-xl">settings</span>
                                 </button>
                                 
-                                <a href="{% url 'panel_view' panel.unique_id %}" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" title="Voir Live">
+                                <a href="{% url 'public_view' panel.unique_id %}" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" title="Voir Live">
                                     <span class="material-symbols-outlined text-xl">visibility</span>
                                 </a>
 
@@ -232,14 +233,16 @@
         if(modal) modal.classList.toggle('hidden');
     }
 
-    function openQR(id, title) {
+    // CORRECTION : On utilise la variable qr_code générée par Django (Base64)
+    function openQR(qrBase64, title) {
         document.getElementById('qrTitle').innerText = title;
-        document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://qroom.io/p/${id}`;
+        document.getElementById('qrImage').src = `data:image/png;base64,${qrBase64}`;
         toggleModal('qrModal');
     }
 
-    function copyToClipboard(text, btnId) {
-        navigator.clipboard.writeText(text).then(() => {
+    // CORRECTION : On utilise l'URL complète générée par Django
+    function copyToClipboard(url) {
+        navigator.clipboard.writeText(url).then(() => {
             const toast = document.getElementById('toast');
             toast.classList.remove('translate-y-20', 'opacity-0');
             setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2000);
@@ -248,13 +251,10 @@
 
     function openSettingsModal(id, title, status, duration) {
         const form = document.getElementById('settingsForm');
-        // On construit l'URL de mise à jour. Ajuste le chemin selon ton urls.py
         form.action = `/panel/${id}/settings/`; 
-        
         document.getElementById('editTitle').value = title;
         document.getElementById('editStatus').value = status;
         document.getElementById('editDuration').value = duration;
-        
         toggleModal('settingsModal');
     }
 </script>

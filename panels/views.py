@@ -8,31 +8,43 @@ from django.http import JsonResponse
 from django.db.models import Count, Q
 from django.utils import timezone
 from .models import Panel, Question, Theme, Vote # Ajoute Theme et Vote ici
+import qrcode
+import io
+import base64
+from django.urls import reverse
 
 @login_required
 def dashboard_view(request):
-    # 1. On récupère les panels avec le compte des questions totales et répondues
     user_panels = Panel.objects.filter(owner=request.user).annotate(
         questions_count=Count('questions'),
         answered_count=Count('questions', filter=Q(questions__is_answered=True))
     ).order_by('-created_at')
     
-    # 2. Calcul des stats globales pour les petits cadrans du haut
-    # On additionne toutes les questions de tous les panels de l'utilisateur
-    total_questions = sum(p.questions_count for p in user_panels)
+    # Correction : Génération du lien UUID et du QR Code
+    for panel in user_panels:
+        # On s'assure que l'URL utilise l'hôte actuel (ex: 127.0.0.1:8000)
+        public_url = request.build_absolute_uri(reverse('public_view', args=[panel.unique_id]))
+        panel.public_url = public_url
+        
+        # Génération du QR Code
+        qr = qrcode.QRCode(version=1, box_size=5, border=2)
+        qr.add_data(public_url)
+        qr.make(fit=True)
+        
+        # IMPORTANT : On force le format RGB pour éviter les erreurs d'affichage
+        img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+        
+        buffer = io.BytesIO()
+        img.save(buffer, format="PNG")
+        panel.qr_code = base64.b64encode(buffer.getvalue()).decode()
     
-    # Simulation des participants (en attendant d'avoir un modèle Participant)
-    total_participants = 0
-
     context = {
         'panels': user_panels,
         'total_panels': user_panels.count(),
-        'total_questions': total_questions,
-        'total_participants': total_participants,
+        'total_questions': sum(p.questions_count for p in user_panels),
+        'total_participants': 0,
     }
-    
     return render(request, 'panels/admin/dashboard.html', context)
-
 
 @login_required
 def create_panel(request):
@@ -205,7 +217,8 @@ def delete_panel(request, panel_id):
 
 def panel_view(request, unique_id):
     panel = get_object_or_404(Panel, unique_id=unique_id)
-    return render(request, 'panels/live_view.html', {'panel': panel})
+    themes = panel.themes.filter(is_active=True)
+    return render(request, 'panels/public/live.html', {'panel': panel, 'themes': themes})
 
 @login_required
 def delete_theme(request, theme_id):
@@ -213,3 +226,43 @@ def delete_theme(request, theme_id):
     panel_id = theme.panel.id
     theme.delete()
     return redirect('themes', panel_id=panel_id)
+
+
+# Change panel_id par unique_id
+def public_panel_view(request, unique_id):
+    # On cherche par unique_id (UUID) pour plus de sécurité
+    panel = get_object_or_404(Panel, unique_id=unique_id)
+    themes = panel.themes.filter(is_active=True)
+    
+    if request.method == "POST":
+        author = request.POST.get('author_name', 'Anonyme')
+        text = request.POST.get('question_text')
+        if text:
+            Question.objects.create(panel=panel, author_name=author, text=text)
+            # On redirige vers l'UUID
+            return redirect('public_view', unique_id=panel.unique_id)
+
+    return render(request, 'panels/public/live.html', {'panel': panel, 'themes': themes})
+
+
+def cast_vote_ajax(request, theme_id):
+    theme = get_object_or_404(Theme, id=theme_id)
+    Vote.objects.create(theme=theme)
+    return JsonResponse({'status': 'ok'})
+
+@login_required
+def toggle_question_status(request, q_id):
+    question = get_object_or_404(Question, id=q_id, panel__owner=request.user)
+    action = request.GET.get('action')
+    
+    if action == 'approve':
+        question.is_answered = True
+    elif action == 'star':
+        question.is_featured = not question.is_featured
+    elif action == 'delete':
+        question.delete()
+        return JsonResponse({'status': 'deleted'})
+    
+    question.save()
+    return JsonResponse({'status': 'updated'})
+

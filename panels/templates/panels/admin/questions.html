@@ -101,21 +101,43 @@
 
 <script>
 function handleAction(questionId, action, element) {
-    // CORRECTION DE L'URL : On utilise l'URL définie dans ton urls.py
-    fetch(`/toggle-question/${questionId}/?action=${action}`)
-    .then(response => response.json())
+    // On ajoute une confirmation pour la suppression
+    if (action === 'delete' && !confirm('Voulez-vous vraiment supprimer cette question ?')) {
+        return;
+    }
+
+    // Utilisation de l'URL correcte (Vérifie bien que c'est le nom dans ton urls.py)
+    fetch(`/toggle-question/${questionId}/?action=${action}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Erreur réseau');
+        return response.json();
+    })
     .then(data => {
         if (data.status === 'deleted') {
+            // Animation de sortie
             const card = element.closest('.group');
-            card.style.transform = 'translateX(20px)';
+            card.style.transition = 'all 0.3s ease';
+            card.style.transform = 'translateX(50px)';
             card.style.opacity = '0';
-            setTimeout(() => card.remove(), 300);
+            setTimeout(() => {
+                card.remove();
+                // Optionnel : rafraîchir pour mettre à jour les compteurs en haut
+                location.reload(); 
+            }, 300);
         } else if (data.status === 'updated') {
-            // Rechargement léger pour mettre à jour les compteurs et les styles
+            // On recharge la page pour voir les changements de couleur (Favori/Approuvé)
             location.reload();
         }
     })
-    .catch(error => console.error('Erreur:', error));
+    .catch(error => {
+        console.error('Erreur:', error);
+        alert('L’action n’a pas pu être effectuée.');
+    });
 }
 </script>
 {% endblock %}
