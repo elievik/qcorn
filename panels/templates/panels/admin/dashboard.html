@@ -10,7 +10,7 @@
                 <h3 class="text-3xl font-black tracking-tight">Prêt pour votre prochain événement ?</h3>
                 <p class="text-slate-300 max-w-md">Créez un nouvel espace interactif en quelques secondes et commencez à engager votre audience en temps réel.</p>
             </div>
-            <button onclick="toggleModal()" class="flex items-center justify-center gap-3 px-8 py-4 bg-primary hover:bg-primary/90 text-[#111618] font-bold text-lg rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-primary/20">
+            <button onclick="toggleModal('createPanelModal')" class="flex items-center justify-center gap-3 px-8 py-4 bg-primary hover:bg-primary/90 text-[#111618] font-bold text-lg rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-primary/20">
                 <span class="material-symbols-outlined text-2xl">add_circle</span>
                 <span>+ Créer un lien de panel</span>
             </button>
@@ -52,21 +52,16 @@
 
     <div class="space-y-4">
         <div class="flex items-center justify-between">
-            <h2 class="text-2xl font-bold tracking-tight">Panels créés</h2>
-            <button class="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg text-sm font-medium flex items-center gap-2">
-                <span class="material-symbols-outlined text-base">filter_list</span>
-                Filtrer
-            </button>
+            <h2 class="text-2xl font-bold tracking-tight">Vos Panels</h2>
         </div>
         
-        <div class="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+        <div class="bg-white dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
             <table class="w-full text-left">
                 <thead class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800">
                     <tr>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Nom du Panel</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Créé le</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Événement & Partage</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Participants</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Engagement (Réponses)</th>
                         <th class="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right">Actions</th>
                     </tr>
                 </thead>
@@ -76,29 +71,61 @@
                         <td class="px-6 py-4">
                             <div class="flex flex-col">
                                 <span class="font-semibold text-slate-900 dark:text-white">{{ panel.title }}</span>
-                                <span class="text-xs text-slate-500 dark:text-slate-400">qroom.io/p/{{ panel.unique_id|slice:":8" }}</span>
+                                <div class="flex items-center gap-3 mt-1.5">
+                                    <button onclick="copyToClipboard('qroom.io/p/{{ panel.unique_id|slice:':8' }}', 'btn-{{ panel.id }}')" id="btn-{{ panel.id }}" class="flex items-center gap-1.5 text-xs font-mono bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-primary px-2 py-1 rounded transition-colors">
+                                        qroom.io/p/{{ panel.unique_id|slice:":8" }}
+                                        <span class="material-symbols-outlined text-[14px]">content_copy</span>
+                                    </button>
+                                    <button onclick="openQR('{{ panel.unique_id|slice:':8' }}', '{{ panel.title|escapejs }}')" class="text-slate-400 hover:text-primary flex items-center" title="Afficher le QR Code">
+                                        <span class="material-symbols-outlined text-lg">qr_code_2</span>
+                                    </button>
+                                </div>
                             </div>
                         </td>
-                        <td class="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">{{ panel.created_at|date:"d M, Y" }}</td>
                         <td class="px-6 py-4">
                             <span class="inline-flex items-center gap-1.5 py-1 px-3 rounded-full text-xs font-bold {% if panel.status == 'active' %}bg-green-500/20 text-green-400{% else %}bg-slate-800 text-slate-400{% endif %}">
                                 <span class="size-1.5 rounded-full {% if panel.status == 'active' %}bg-green-500 animate-pulse{% else %}bg-slate-500{% endif %}"></span>
                                 {{ panel.get_status_display }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 text-sm font-medium">0</td>
+                        <td class="px-6 py-4">
+                            <div class="flex flex-col gap-1.5 w-40">
+                                <div class="flex justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    <span>Engagement</span>
+                                    <span>{{ panel.questions_count|default:"0" }} Q.</span>
+                                </div>
+                                <div class="h-1.5 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                    {% if panel.questions_count %}
+                                        {% widthratio panel.answered_count|default:0 panel.questions_count 100 as width %}
+                                        <div class="h-full bg-primary rounded-full transition-all duration-500" style="width: {{ width }}%"></div>
+                                    {% else %}
+                                        <div class="h-full bg-slate-200 dark:bg-slate-700 rounded-full" style="width: 0%"></div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
                         <td class="px-6 py-4 text-right">
-                            <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button class="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"><span class="material-symbols-outlined text-xl">settings</span></button>
-                                <button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"><span class="material-symbols-outlined text-xl">visibility</span></button>
-                                <button class="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><span class="material-symbols-outlined text-xl">delete</span></button>
+                            <div class="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onclick="openSettingsModal('{{ panel.id }}', '{{ panel.title|escapejs }}', '{{ panel.status }}', '{{ panel.duration_minutes|default:'' }}')" 
+                                        class="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all" title="Paramètres">
+                                    <span class="material-symbols-outlined text-xl">settings</span>
+                                </button>
+                                
+                                <a href="{% url 'panel_view' panel.unique_id %}" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all" title="Voir Live">
+                                    <span class="material-symbols-outlined text-xl">visibility</span>
+                                </a>
+
+                                <form action="{% url 'delete_panel' panel.id %}" method="POST" class="inline" onsubmit="return confirm('Supprimer ce panel ?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all">
+                                        <span class="material-symbols-outlined text-xl">delete</span>
+                                    </button>
+                                </form>
                             </div>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr>
-                        <td colspan="5" class="px-6 py-12 text-center text-slate-500 italic">Aucun panel créé pour le moment.</td>
-                    </tr>
+                    <tr><td colspan="4" class="px-6 py-12 text-center text-slate-500 italic">Aucun panel créé.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -106,26 +133,130 @@
     </div>
 </div>
 
-<div id="createPanelModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-    <div class="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
-        <div class="p-6 border-b border-slate-800 flex justify-between items-center">
-            <h3 class="text-xl font-bold text-white">Nouveau Panel</h3>
-            <button onclick="toggleModal()" class="text-slate-400 hover:text-white"><span class="material-symbols-outlined">close</span></button>
+<div id="qrModal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+    <div class="bg-white rounded-3xl p-8 max-w-sm w-full text-center space-y-6">
+        <div class="flex justify-between items-center mb-2">
+            <h3 id="qrTitle" class="font-bold text-slate-900 truncate pr-4">QR Code du Panel</h3>
+            <button onclick="toggleModal('qrModal')" class="text-slate-400 hover:text-slate-900"><span class="material-symbols-outlined">close</span></button>
         </div>
-        <form action="{% url 'create_panel' %}" method="POST" class="p-6 space-y-4">
-            {% csrf_token %}
+        <div class="bg-slate-50 p-4 rounded-2xl inline-block border-2 border-slate-100">
+            <img id="qrImage" src="" alt="QR Code" class="size-64 mx-auto">
+        </div>
+        <p class="text-sm text-slate-500">Scannez pour rejoindre la session Q&A</p>
+        <button onclick="window.print()" class="w-full py-3 border border-slate-200 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors">
+            <span class="material-symbols-outlined">print</span> Imprimer le code
+        </button>
+    </div>
+</div>
+
+<div id="createPanelModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">Nouveau Panel</h3>
+            <button onclick="toggleModal('createPanelModal')" class="text-slate-400 hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <form action="{% url 'create_panel' %}" method="POST" class="p-6 space-y-4"> {% csrf_token %}
             <div>
-                <label class="block text-sm font-medium text-slate-300 mb-2">Nom de l'événement</label>
-                <input type="text" name="title" required class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white focus:ring-2 focus:ring-primary/50 outline-none" placeholder="Ex: Ma conférence tech">
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nom de l'événement</label>
+                <input type="text" name="title" required class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary" placeholder="Ex: Conférence Annuelle">
             </div>
             <button type="submit" class="w-full py-3 bg-primary text-slate-900 font-bold rounded-xl hover:brightness-110 transition-all">Créer le salon</button>
         </form>
     </div>
 </div>
 
+<div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-slate-900 text-white rounded-full text-sm font-bold shadow-2xl border border-white/10 flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300">
+    <span class="material-symbols-outlined text-green-400">check_circle</span>
+    Lien copié !
+</div>
+
+<div id="settingsModal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
+        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/30">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">settings</span>
+                Configuration du Panel
+            </h3>
+            <button onclick="toggleModal('settingsModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+
+        <form id="settingsForm" method="POST" class="p-6 space-y-6">
+            {% csrf_token %}
+            
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Nom de l'événement</label>
+                <input type="text" name="title" id="editTitle" required 
+                    class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary">
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Date & Heure</label>
+                    <input type="datetime-local" name="scheduled_start" id="editStart"
+                        class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Durée (min)</label>
+                    <input type="number" name="duration" id="editDuration" placeholder="Ex: 60"
+                        class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">État du salon</label>
+                <select name="status" id="editStatus" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-primary">
+                    <option value="active">🟢 Ouvert (Accepte les questions)</option>
+                    <option value="closed">🔴 Fermé (Lecture seule)</option>
+                </select>
+            </div>
+
+            <div class="pt-4 flex gap-3">
+                <button type="button" onclick="toggleModal('settingsModal')" class="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-500 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                    Annuler
+                </button>
+                <button type="submit" class="flex-1 py-3 bg-primary text-slate-900 font-bold rounded-xl hover:brightness-110 shadow-lg shadow-primary/20 transition-all">
+                    Enregistrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
-    function toggleModal() {
-        document.getElementById('createPanelModal').classList.toggle('hidden');
+    function toggleModal(id) {
+        const modal = document.getElementById(id);
+        if(modal) modal.classList.toggle('hidden');
+    }
+
+    function openQR(id, title) {
+        document.getElementById('qrTitle').innerText = title;
+        document.getElementById('qrImage').src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://qroom.io/p/${id}`;
+        toggleModal('qrModal');
+    }
+
+    function copyToClipboard(text, btnId) {
+        navigator.clipboard.writeText(text).then(() => {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2000);
+        });
+    }
+
+    function openSettingsModal(id, title, status, duration) {
+        const form = document.getElementById('settingsForm');
+        // On construit l'URL de mise à jour. Ajuste le chemin selon ton urls.py
+        form.action = `/panel/${id}/settings/`; 
+        
+        document.getElementById('editTitle').value = title;
+        document.getElementById('editStatus').value = status;
+        document.getElementById('editDuration').value = duration;
+        
+        toggleModal('settingsModal');
     }
 </script>
+
 {% endblock %}

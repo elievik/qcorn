@@ -7,15 +7,15 @@
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div class="space-y-1">
             <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Modération des Questions</h1>
-            <p class="text-slate-500 dark:text-slate-400">Gérez les interactions pour <span class="text-primary font-semibold">"Sommet Tech 2024"</span></p>
+            <p class="text-slate-500 dark:text-slate-400">Gérez les interactions en temps réel</p>
         </div>
         <div class="flex gap-3">
             <button class="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-sm font-semibold transition-all">
                 <span class="material-symbols-outlined text-[18px]">download</span> Exporter
             </button>
-            <button class="flex items-center gap-2 px-4 py-2 bg-primary text-[#111618] hover:bg-primary/90 rounded-lg text-sm font-bold transition-all shadow-lg shadow-primary/20">
-                <span class="material-symbols-outlined text-[18px]">settings</span> Paramètres
-            </button>
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-2 px-4 py-2 bg-primary text-[#111618] hover:bg-primary/90 rounded-lg text-sm font-bold transition-all shadow-lg shadow-primary/20">
+                <span class="material-symbols-outlined text-[18px]">dashboard</span> Dashboard
+            </a>
         </div>
     </div>
 
@@ -26,26 +26,26 @@
         </div>
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-xl shadow-sm border-l-4 border-l-primary">
             <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Nouvelles</p>
-            <p class="text-3xl font-bold">12</p>
+            <p class="text-3xl font-bold">{{ count_new }}</p>
         </div>
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-xl shadow-sm border-l-4 border-l-amber-400">
-            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">En cours</p>
-            <p class="text-3xl font-bold">5</p>
+            <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">En avant</p>
+            <p class="text-3xl font-bold">{{ count_featured }}</p>
         </div>
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-xl shadow-sm border-l-4 border-l-emerald-400">
             <p class="text-slate-500 dark:text-slate-400 text-sm font-medium">Répondues</p>
-            <p class="text-3xl font-bold">88</p>
+            <p class="text-3xl font-bold">{{ count_answered }}</p>
         </div>
     </div>
 
     <div class="flex items-center justify-between gap-4 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-200 dark:border-slate-800">
         <div class="flex gap-2">
-            <button class="px-4 py-1.5 bg-primary text-white rounded-lg text-sm font-semibold">Toutes</button>
+            <button class="px-4 py-1.5 bg-primary text-[#111618] rounded-lg text-sm font-semibold">Toutes</button>
             <button class="px-4 py-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg text-sm font-medium transition-colors">Nouvelles</button>
         </div>
         <select class="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm outline-none px-4 py-2">
-            <option>Plus votées</option>
             <option>Plus récentes</option>
+            <option>Plus votées</option>
         </select>
     </div>
 
@@ -55,7 +55,7 @@
             <div class="flex gap-6 items-start">
                 <div class="flex flex-col items-center justify-center min-w-[60px] p-2 {% if q.is_featured %}bg-primary/10{% else %}bg-slate-100 dark:bg-slate-800{% endif %} rounded-lg">
                     <span class="material-symbols-outlined {% if q.is_featured %}text-primary{% else %}text-slate-400{% endif %}">change_history</span>
-                    <span class="text-xl font-black {% if q.is_featured %}text-primary{% endif %}">124</span>
+                    <span class="text-xl font-black {% if q.is_featured %}text-primary{% endif %}">0</span>
                     <span class="text-[10px] uppercase font-bold text-slate-400">Votes</span>
                 </div>
                 
@@ -70,19 +70,19 @@
                             <span class="text-xs text-slate-400">• Il y a {{ q.created_at|timesince }} par {{ q.author_name }}</span>
                         </div>
                         
-                    <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onclick="handleAction({{ q.id }}, 'star', this)" class="p-2 hover:bg-primary/20 hover:text-primary rounded-lg transition-colors text-slate-400" title="Mettre en avant">
-                                <span class="material-symbols-outlined text-[20px] {% if q.is_featured %}fill-icon text-primary{% endif %}">star</span>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="handleAction({{ q.id }}, 'star', this)" class="p-2 hover:bg-primary/20 hover:text-primary rounded-lg transition-colors {% if q.is_featured %}text-primary{% else %}text-slate-400{% endif %}" title="Mettre en avant">
+                                <span class="material-symbols-outlined text-[20px] {% if q.is_featured %}fill-icon{% endif %}">star</span>
                             </button>
                             
-                            <button onclick="handleAction({{ q.id }}, 'approve', this)" class="p-2 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-500 rounded-lg transition-colors text-slate-400" title="Répondue">
+                            <button onclick="handleAction({{ q.id }}, 'approve', this)" class="p-2 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-500 rounded-lg transition-colors text-slate-400" title="Marquer comme répondue">
                                 <span class="material-symbols-outlined text-[20px]">check_circle</span>
                             </button>
                             
                             <button onclick="handleAction({{ q.id }}, 'delete', this)" class="p-2 hover:bg-rose-100 dark:hover:bg-rose-900/30 hover:text-rose-500 rounded-lg transition-colors text-slate-400" title="Supprimer">
                                 <span class="material-symbols-outlined text-[20px]">delete</span>
                             </button>
-                    </div>
+                        </div>
                     </div>
                     <p class="text-lg font-semibold leading-relaxed text-slate-800 dark:text-slate-100">
                         {{ q.text }}
@@ -98,21 +98,24 @@
         {% endfor %}
     </div>
 </div>
+
 <script>
 function handleAction(questionId, action, element) {
-    // On appelle l'URL Django
-    fetch(`/question/${questionId}/action/?action=${action}`)
+    // CORRECTION DE L'URL : On utilise l'URL définie dans ton urls.py
+    fetch(`/toggle-question/${questionId}/?action=${action}`)
     .then(response => response.json())
     .then(data => {
         if (data.status === 'deleted') {
-            // On fait disparaître la carte avec une animation
-            element.closest('.group').style.opacity = '0';
-            setTimeout(() => element.closest('.group').remove(), 300);
+            const card = element.closest('.group');
+            card.style.transform = 'translateX(20px)';
+            card.style.opacity = '0';
+            setTimeout(() => card.remove(), 300);
         } else if (data.status === 'updated') {
-            // On recharge simplement pour voir les changements (ou on change les classes CSS ici)
+            // Rechargement léger pour mettre à jour les compteurs et les styles
             location.reload();
         }
-    });
+    })
+    .catch(error => console.error('Erreur:', error));
 }
 </script>
 {% endblock %}

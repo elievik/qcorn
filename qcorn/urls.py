@@ -42,4 +42,9 @@ urlpatterns = [
 
     path('api/submit-question/', views.submit_question, name='submit_question'),
     path('p/', views.public_index, name='public_index'), # La page que les gens verront
+    path('panel/<int:panel_id>/settings/', views.panel_settings, name='panel_settings'),
+    path('p/<uuid:unique_id>/', views.panel_view, name='panel_view'), # C'est ce 'name' qui manque !
+    path('delete-panel/<int:panel_id>/', views.delete_panel, name='delete_panel'),
+    path('panel/<int:panel_id>/themes/', views.themes_view, name='themes'),
+    path('theme/delete/<int:theme_id>/', views.delete_theme, name='delete_theme'),
 ]
