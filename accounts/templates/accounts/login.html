@@ -96,7 +96,7 @@
                 </div>
 
                 <!-- Bouton Google Firebase -->
-                <button type="button" onclick="handleGoogleSignIn()" id="googleSignInBtn" class="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
+                <button type="button" onclick="handleGoogleSignIn()" id="googleSignInBtn" class="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors" disabled>
                     <img alt="G" class="w-5 h-5" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
                     <span id="googleBtnText">Continuer avec Google</span>
                 </button>
@@ -113,28 +113,25 @@
 <script>
     // Attendre que les scripts Firebase se chargent
     window.addEventListener('load', function() {
-        // Configuration Firebase - À remplir avec vos vraies clés
-        const firebaseConfig = {
-            apiKey: "AIzaSyCbaAEonMkoqsUMDCvV7xWPdbL5jY9p1gE",
-            authDomain: "qroom-bb7db.firebaseapp.com",
-            projectId: "qroom-bb7db",
-            storageBucket: "qroom-bb7db.firebasestorage.app",
-            messagingSenderId: "113139462472",
-            appId: "1:113139462472:web:416ddd12726e21605f837d",
-            measurementId: "G-Y58Z4PJM6F"
-        };
-
-        // Initialiser Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-        } catch (error) {
-            if (!error.message.includes('duplicate app')) {
-                console.error('Erreur initialisation Firebase:', error);
-            }
-        }
-        
-        window.auth = firebase.auth();
-        console.log('✅ Firebase initialisé avec succès');
+        // Charger la configuration Firebase depuis le fichier JSON
+        fetch('/static/firebase-config.json')
+            .then(response => response.json())
+            .then(firebaseConfig => {
+                // Initialiser Firebase
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                } catch (error) {
+                    if (!error.message.includes('duplicate app')) {
+                        console.error('Erreur initialisation Firebase:', error);
+                    }
+                }
+                
+                window.auth = firebase.auth();
+                console.log('✅ Firebase initialisé avec succès');
+            })
+            .catch(error => {
+                console.error('Erreur chargement configuration Firebase:', error);
+            });
     });
 
     // Gestionnaire pour la connexion Google
@@ -236,42 +233,70 @@
                 Pas encore de compte ? 
                 <a href="{% url 'register' %}" class="text-primary font-semibold hover:underline">Créer un compte</a>
             </p>
-        </div>
-    </div>
-</div>
+
+</body>
+</html>
+
+{{ firebase_config|json_script:"firebase-config" }}
 
 <!-- Scripts Firebase AVANT les autres scripts -->
-<!-- Firebase SDK CDN - DOIT ÊTRE AVANT notre code -->
 <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js"></script>
 
 <!-- Notre code JavaScript qui utilise Firebase -->
 <script>
-    // Configuration Firebase
-    const firebaseConfig = {
-        apiKey: "AIzaSyCbaAEonMkoqsUMDCvV7xWPdbL5jY9p1gE",
-        authDomain: "qroom-bb7db.firebaseapp.com",
-        projectId: "qroom-bb7db",
-        storageBucket: "qroom-bb7db.firebasestorage.app",
-        messagingSenderId: "113139462472",
-        appId: "1:113139462472:web:416ddd12726e21605f837d",
-        measurementId: "G-Y58Z4PJM6F"
-    };
+    // Variable globale pour stocker l'état de Firebase
+    let firebaseReady = false;
+    let auth = null;
 
-    // Initialiser Firebase
-    try {
-        firebase.initializeApp(firebaseConfig);
-        console.log('✅ Firebase initialisé');
-    } catch (error) {
-        if (!error.message.includes('duplicate')) {
-            console.error('Firebase error:', error);
-        }
+    // Fonction pour vérifier si Firebase est prêt
+    function checkFirebaseReady() {
+        return typeof firebase !== 'undefined' && firebase.auth && firebase.apps && firebase.apps.length > 0;
     }
 
-    const auth = firebase.auth();
+    // Attendre que les scripts Firebase se chargent et s'initialisent
+    window.addEventListener('load', function() {
+        // Attendre un peu pour que les scripts Firebase soient complètement chargés
+        setTimeout(function() {
+            // Utiliser la configuration Firebase injectée par Django
+            const firebaseConfig = JSON.parse(document.getElementById('firebase-config').textContent);
+
+            // Vérifier que Firebase est disponible
+            if (typeof firebase === 'undefined') {
+                throw new Error('Firebase SDK non chargé');
+            }
+
+            // Initialiser Firebase
+            try {
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                auth = firebase.auth();
+                firebaseReady = true;
+                console.log('✅ Firebase initialisé avec succès');
+                
+                // Activer le bouton Google si Firebase est prêt
+                const googleBtn = document.getElementById('googleSignInBtn');
+                if (googleBtn) {
+                    googleBtn.disabled = false;
+                }
+            } catch (error) {
+                if (!error.message.includes('duplicate app')) {
+                    console.error('Erreur initialisation Firebase:', error);
+                }
+            }
+        }, 500); // Attendre 500ms pour que les scripts soient chargés
+    });
 
     // Gestionnaire pour la connexion Google
     async function handleGoogleSignIn() {
+        // Vérifier que Firebase est prêt
+        if (!firebaseReady || !auth) {
+            console.error('Firebase n\'est pas encore prêt');
+            alert('⏳ Veuillez patienter pendant que Firebase se charge...');
+            return;
+        }
+
         const btn = document.getElementById('googleSignInBtn');
         const btnText = document.getElementById('googleBtnText');
         
@@ -279,18 +304,23 @@
             btn.disabled = true;
             btnText.textContent = 'Connexion en cours...';
 
+            // Créer un provider Google
             const provider = new firebase.auth.GoogleAuthProvider();
+            
+            // Ajouter les données du profil
             provider.addScope('profile');
             provider.addScope('email');
 
+            // Se connecter avec popup
             const result = await auth.signInWithPopup(provider);
             const user = result.user;
 
-            // Envoyer au backend Django
+            // Envoyer les données au backend Django
             const response = await fetch('/api/auth/firebase-login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
                 },
                 body: JSON.stringify({
                     uid: user.uid,
@@ -300,23 +330,35 @@
                 })
             });
 
-            const data = await response.json();
-
-            if (data.success) {
+            if (response.ok) {
                 window.location.href = '/dashboard/';
             } else {
-                alert('❌ Erreur: ' + (data.error || 'Erreur inconnue'));
-                btn.disabled = false;
-                btnText.textContent = 'Continuer avec Google';
+                throw new Error('Échec de l\'authentification backend');
             }
+
         } catch (error) {
-            console.error('❌ Erreur Firebase:', error);
-            alert('❌ Erreur: ' + error.message);
+            console.error('Erreur lors de la connexion:', error);
+            console.error('Code erreur Firebase:', error.code);
+            console.error('Message:', error.message);
+            alert('❌ Erreur de connexion:\n\n' + error.message + '\n\n(Vérifiez la console - F12)');
             btn.disabled = false;
             btnText.textContent = 'Continuer avec Google';
         }
     }
-</script>
 
-</body>
-</html>
+    // Helper pour obtenir le CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>

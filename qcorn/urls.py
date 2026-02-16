@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 from core.views import landing
 from django.http import HttpResponse
 from accounts.views import login_view, register_view, logout_view, firebase_login, firebase_register
@@ -59,3 +61,8 @@ urlpatterns = [
     # API
     path('api/submit-question/', views.submit_question, name='submit_question'),
 ]
+
+# Servir les fichiers statiques et médias en développement
+if settings.DEBUG:
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
