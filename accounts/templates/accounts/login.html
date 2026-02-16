@@ -11,12 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
-    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
-
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -117,20 +111,31 @@
 </div>
 
 <script>
-    // Configuration Firebase - À remplir avec vos vraies clés
-    const firebaseConfig = {
-        apiKey: "AIzaSyCbaAEonMkoqsUMDCvV7xWPdbL5jY9p1gE",
-        authDomain: "qroom-bb7db.firebaseapp.com",
-        projectId: "qroom-bb7db",
-        storageBucket: "qroom-bb7db.firebasestorage.app",
-        messagingSenderId: "113139462472",
-        appId: "1:113139462472:web:416ddd12726e21605f837d",
-        measurementId: "G-Y58Z4PJM6F"
-};
+    // Attendre que les scripts Firebase se chargent
+    window.addEventListener('load', function() {
+        // Configuration Firebase - À remplir avec vos vraies clés
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbaAEonMkoqsUMDCvV7xWPdbL5jY9p1gE",
+            authDomain: "qroom-bb7db.firebaseapp.com",
+            projectId: "qroom-bb7db",
+            storageBucket: "qroom-bb7db.firebasestorage.app",
+            messagingSenderId: "113139462472",
+            appId: "1:113139462472:web:416ddd12726e21605f837d",
+            measurementId: "G-Y58Z4PJM6F"
+        };
 
-    // Initialiser Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+        // Initialiser Firebase
+        try {
+            firebase.initializeApp(firebaseConfig);
+        } catch (error) {
+            if (!error.message.includes('duplicate app')) {
+                console.error('Erreur initialisation Firebase:', error);
+            }
+        }
+        
+        window.auth = firebase.auth();
+        console.log('✅ Firebase initialisé avec succès');
+    });
 
     // Gestionnaire pour la connexion Google
     async function handleGoogleSignIn() {
@@ -149,7 +154,7 @@
             provider.addScope('email');
 
             // Lancer la fenêtre de connexion Google
-            const result = await auth.signInWithPopup(provider);
+            const result = await window.auth.signInWithPopup(provider);
             const user = result.user;
 
             // Envoyer les données au backend Django
@@ -178,7 +183,9 @@
             }
         } catch (error) {
             console.error('Erreur lors de la connexion:', error);
-            alert('Erreur de connexion. Veuillez réessayer.');
+            console.error('Code erreur Firebase:', error.code);
+            console.error('Message:', error.message);
+            alert('❌ Erreur de connexion:\n\n' + error.message + '\n\n(Vérifiez la console - F12)');
             btn.disabled = false;
             btnText.textContent = 'Continuer avec Google';
         }
@@ -220,9 +227,9 @@
                 <div class="relative flex justify-center text-sm"><span class="px-2 bg-[#1c2427] text-[#9db2b9]">Ou</span></div>
             </div>
 
-            <button class="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
+            <button type="button" onclick="handleGoogleSignIn()" id="googleSignInBtn" class="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
                 <img alt="G" class="w-5 h-5" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
-                Continuer avec Google
+                <span id="googleBtnText">Continuer avec Google</span>
             </button>
 
             <p class="mt-8 text-center text-sm text-[#9db2b9]">
@@ -232,5 +239,84 @@
         </div>
     </div>
 </div>
+
+<!-- Scripts Firebase AVANT les autres scripts -->
+<!-- Firebase SDK CDN - DOIT ÊTRE AVANT notre code -->
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js"></script>
+
+<!-- Notre code JavaScript qui utilise Firebase -->
+<script>
+    // Configuration Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSyCbaAEonMkoqsUMDCvV7xWPdbL5jY9p1gE",
+        authDomain: "qroom-bb7db.firebaseapp.com",
+        projectId: "qroom-bb7db",
+        storageBucket: "qroom-bb7db.firebasestorage.app",
+        messagingSenderId: "113139462472",
+        appId: "1:113139462472:web:416ddd12726e21605f837d",
+        measurementId: "G-Y58Z4PJM6F"
+    };
+
+    // Initialiser Firebase
+    try {
+        firebase.initializeApp(firebaseConfig);
+        console.log('✅ Firebase initialisé');
+    } catch (error) {
+        if (!error.message.includes('duplicate')) {
+            console.error('Firebase error:', error);
+        }
+    }
+
+    const auth = firebase.auth();
+
+    // Gestionnaire pour la connexion Google
+    async function handleGoogleSignIn() {
+        const btn = document.getElementById('googleSignInBtn');
+        const btnText = document.getElementById('googleBtnText');
+        
+        try {
+            btn.disabled = true;
+            btnText.textContent = 'Connexion en cours...';
+
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.addScope('profile');
+            provider.addScope('email');
+
+            const result = await auth.signInWithPopup(provider);
+            const user = result.user;
+
+            // Envoyer au backend Django
+            const response = await fetch('/api/auth/firebase-login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                window.location.href = '/dashboard/';
+            } else {
+                alert('❌ Erreur: ' + (data.error || 'Erreur inconnue'));
+                btn.disabled = false;
+                btnText.textContent = 'Continuer avec Google';
+            }
+        } catch (error) {
+            console.error('❌ Erreur Firebase:', error);
+            alert('❌ Erreur: ' + error.message);
+            btn.disabled = false;
+            btnText.textContent = 'Continuer avec Google';
+        }
+    }
+</script>
+
 </body>
 </html>
