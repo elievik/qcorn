@@ -18,24 +18,26 @@ from django.contrib import admin
 from django.urls import path, include
 from core.views import landing
 from django.http import HttpResponse
-from accounts.views import login_view, register_view, logout_view
+from accounts.views import login_view, register_view, logout_view, firebase_login, firebase_register
 from panels.views import dashboard_view, create_panel, toggle_question_status
 from panels import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', landing, name='landing'),
+    path('dashboard/', dashboard_view, name='dashboard'),
 
     # Authentification
     path('login/', login_view, name='login'),
     path('register/', register_view, name='register'),
     path('logout/', logout_view, name='logout'),
-
-    # Dashboard principal
-    path('dashboard/', dashboard_view, name='dashboard'),
-    path('dashboard/create/', create_panel, name='create_panel'),
+    
+    # Firebase Authentication
+    path('api/auth/firebase-login/', firebase_login, name='firebase_login'),
+    path('api/auth/firebase-register/', firebase_register, name='firebase_register'),
 
     # Gestion d'un Panel spécifique (C'est ceux-là que ta sidebar utilise)
+    path('create-panel/', create_panel, name='create_panel'),
     path('panel/<int:panel_id>/questions/', views.questions_manage_view, name='panel_questions'),
     path('panel/<int:panel_id>/themes/', views.themes_view, name='panel_themes'),
     path('panel/<int:panel_id>/projection/', views.projection_view, name='panel_projection'),

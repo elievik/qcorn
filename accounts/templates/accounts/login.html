@@ -11,6 +11,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.css" />
+
     <script id="tailwind-config">
         tailwind.config = {
             darkMode: "class",
@@ -28,6 +34,8 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         .glass-card { background: rgba(28, 36, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(59, 77, 84, 0.5); }
+        .firebaseui-container { max-width: 100%; }
+        .firebaseui-button { width: 100% !important; }
     </style>
 </head>
 <body class="bg-background-dark min-h-screen font-display">
@@ -49,6 +57,135 @@
     </div>
 
     <div class="flex-1 flex flex-col items-center justify-center p-6 lg:p-12">
+        <div class="w-full max-w-md">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="mb-4 p-4 rounded-lg bg-red-500/20 border border-red-500/50 text-red-300 text-sm">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="glass-card rounded-xl p-8 shadow-2xl">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-white mb-2">Bon retour !</h2>
+                    <p class="text-[#9db2b9]">Connectez-vous pour gérer vos salons</p>
+                </div>
+                
+                <!-- Formulaire classique -->
+                <form class="space-y-5" method="POST">
+                    {% csrf_token %}
+                    <div>
+                        <label class="block text-sm font-medium text-white mb-2">Email</label>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9db2b9] text-xl">mail</span>
+                            <input name="username" class="w-full pl-10 pr-4 py-3 rounded-lg bg-[#1c2427] border border-[#3b4d54] text-white focus:border-primary outline-none" placeholder="nom@entreprise.com" type="email" required/>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-2">
+                            <label class="text-sm font-medium text-white">Mot de passe</label>
+                        </div>
+                        <div class="relative">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#9db2b9] text-xl">lock</span>
+                            <input name="password" class="w-full pl-10 pr-4 py-3 rounded-lg bg-[#1c2427] border border-[#3b4d54] text-white focus:border-primary outline-none" placeholder="••••••••" type="password" required/>
+                        </div>
+                    </div>
+                    <button class="w-full bg-primary hover:brightness-110 text-background-dark font-bold py-3 px-4 rounded-lg transition-all" type="submit">
+                        Se connecter
+                    </button>
+                </form>
+
+                <div class="relative my-8">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-[#3b4d54]"></div></div>
+                    <div class="relative flex justify-center text-sm"><span class="px-2 bg-[#1c2427] text-[#9db2b9]">Ou</span></div>
+                </div>
+
+                <!-- Bouton Google Firebase -->
+                <button type="button" onclick="handleGoogleSignIn()" id="googleSignInBtn" class="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
+                    <img alt="G" class="w-5 h-5" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
+                    <span id="googleBtnText">Continuer avec Google</span>
+                </button>
+
+                <p class="mt-8 text-center text-sm text-[#9db2b9]">
+                    Pas encore de compte ? 
+                    <a href="{% url 'register' %}" class="text-primary font-semibold hover:underline">Créer un compte</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Configuration Firebase - À remplir avec vos vraies clés
+    const firebaseConfig = {
+        apiKey: "AIzaSyCbaAEonMkoqsUMDCvV7xWPdbL5jY9p1gE",
+        authDomain: "qroom-bb7db.firebaseapp.com",
+        projectId: "qroom-bb7db",
+        storageBucket: "qroom-bb7db.firebasestorage.app",
+        messagingSenderId: "113139462472",
+        appId: "1:113139462472:web:416ddd12726e21605f837d",
+        measurementId: "G-Y58Z4PJM6F"
+};
+
+    // Initialiser Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // Gestionnaire pour la connexion Google
+    async function handleGoogleSignIn() {
+        const btn = document.getElementById('googleSignInBtn');
+        const btnText = document.getElementById('googleBtnText');
+        
+        try {
+            btn.disabled = true;
+            btnText.textContent = 'Connexion en cours...';
+
+            // Créer un provider Google
+            const provider = new firebase.auth.GoogleAuthProvider();
+            
+            // Ajouter les données du profil
+            provider.addScope('profile');
+            provider.addScope('email');
+
+            // Lancer la fenêtre de connexion Google
+            const result = await auth.signInWithPopup(provider);
+            const user = result.user;
+
+            // Envoyer les données au backend Django
+            const response = await fetch('/api/auth/firebase-login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Redirection vers le dashboard
+                window.location.href = '/dashboard/';
+            } else {
+                alert('Erreur: ' + data.error);
+                btn.disabled = false;
+                btnText.textContent = 'Continuer avec Google';
+            }
+        } catch (error) {
+            console.error('Erreur lors de la connexion:', error);
+            alert('Erreur de connexion. Veuillez réessayer.');
+            btn.disabled = false;
+            btnText.textContent = 'Continuer avec Google';
+        }
+    }
+</script>
+</body>
+</html>    <div class="flex-1 flex flex-col items-center justify-center p-6 lg:p-12">
         <div class="w-full max-w-md glass-card rounded-xl p-8 shadow-2xl">
             <div class="text-center mb-8">
                 <h2 class="text-2xl font-bold text-white mb-2">Bon retour !</h2>
