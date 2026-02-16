@@ -42,27 +42,35 @@
                 </div>
             </div>
 
-            <nav class="flex-1 px-3 space-y-1">
-                <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'dashboard' %}sidebar-item-active text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-800/50{% endif %}">
-                    <span class="material-symbols-outlined">dashboard</span>
-                    <span class="text-sm font-semibold">Dashboard</span>
-                </a>
+        <nav class="flex-1 px-3 space-y-1">
+    <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'dashboard' %}sidebar-item-active text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-800/50{% endif %}">
+        <span class="material-symbols-outlined">dashboard</span>
+        <span class="text-sm font-semibold">Dashboard</span>
+    </a>
 
-                <a href="{% url 'questions_manage' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'questions_manage' %}sidebar-item-active text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-800/50{% endif %}">
-                    <span class="material-symbols-outlined">forum</span>
-                    <span class="text-sm font-medium">Questions</span>
-                </a>
+    {% if panels.0 %} 
+        {% with p=panels.0 %}
+        <a href="{% url 'panel_questions' p.id %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-800/50">
+            <span class="material-symbols-outlined">forum</span>
+            <span class="text-sm font-medium">Questions</span>
+        </a>
 
-                <a href="{% url 'themes' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'themes' %}sidebar-item-active text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-800/50{% endif %}">
-                    <span class="material-symbols-outlined">palette</span>
-                    <span class="text-sm font-medium">Thèmes & Vote</span>
-                </a>
+        <a href="{% url 'panel_themes' p.id %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-800/50">
+            <span class="material-symbols-outlined">palette</span>
+            <span class="text-sm font-medium">Thèmes & Vote</span>
+        </a>
 
-                <a href="{% url 'projection' %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors {% if request.resolver_match.url_name == 'projection' %}sidebar-item-active text-primary{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-800/50{% endif %}">
-                    <span class="material-symbols-outlined">tv</span>
-                    <span class="text-sm font-medium">Projection</span>
-                </a>
-            </nav>
+        <a href="{% url 'panel_projection' p.id %}" class="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-slate-600 dark:text-slate-400 hover:bg-slate-800/50">
+            <span class="material-symbols-outlined">tv</span>
+            <span class="text-sm font-medium">Projection</span>
+        </a>
+        {% endwith %}
+    {% else %}
+        <div class="px-4 py-3 text-slate-500 opacity-50 text-xs italic">
+            Sélectionnez un salon dans le dashboard pour voir les options.
+        </div>
+    {% endif %}
+</nav>
 
             <div class="px-3 py-2 border-t border-slate-200 dark:border-slate-800">
                 <form action="{% url 'logout' %}" method="post">

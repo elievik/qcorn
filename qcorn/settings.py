@@ -129,3 +129,17 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+# Authentication & Security
+# https://docs.djangoproject.com/en/4.2/ref/settings/#logging-in-and-out
+LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'landing'
+
+# CSRF & Security headers
+CSRF_COOKIE_SECURE = False  # À mettre à True en production avec HTTPS
+SESSION_COOKIE_SECURE = False  # À mettre à True en production avec HTTPS
+SECURE_HSTS_SECONDS = 0  # À activer en production
+X_FRAME_OPTIONS = 'DENY'
+SECURE_CONTENT_SECURITY_POLICY = {
+    "default-src": ("'self'",),
+}

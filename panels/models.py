@@ -18,6 +18,10 @@ class Panel(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')
     is_public = models.BooleanField(default=True)
     
+    # Messages optionnels
+    welcome_title = models.CharField(max_length=200, blank=True, null=True, help_text="Titre pour la salle d'attente")
+    welcome_message = models.TextField(blank=True, null=True, help_text="Message pour la salle d'attente")
+    
     # Programmation
     scheduled_start = models.DateTimeField(null=True, blank=True) 
     duration_minutes = models.PositiveIntegerField(null=True, blank=True, help_text="Durée en minutes")

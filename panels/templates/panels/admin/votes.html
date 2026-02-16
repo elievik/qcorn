@@ -2,29 +2,59 @@
 {% block title %}Statistiques & Votes{% endblock %}
 
 {% block content %}
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-    <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800">
-        <h3 class="text-xl font-bold mb-6">Activité des Votes</h3>
-        <div class="flex items-end gap-4 h-64">
-            <div class="flex-1 bg-primary/20 rounded-t-lg h-[40%] hover:bg-primary transition-all"></div>
-            <div class="flex-1 bg-primary/20 rounded-t-lg h-[60%] hover:bg-primary transition-all"></div>
-            <div class="flex-1 bg-primary/20 rounded-t-lg h-[90%] hover:bg-primary transition-all"></div>
-            <div class="flex-1 bg-primary/20 rounded-t-lg h-[50%] hover:bg-primary transition-all"></div>
-        </div>
-        <div class="flex justify-between mt-4 text-slate-500 text-sm">
-            <span>09:00</span><span>10:00</span><span>11:00</span><span>12:00</span>
+<div class="space-y-8">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div class="space-y-1">
+            <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Statistiques & Votes</h1>
+            <p class="text-slate-500 dark:text-slate-400">Suivi de l'engagement des participants</p>
         </div>
     </div>
 
-    <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800">
-        <h3 class="text-xl font-bold mb-6">Top Questions (Votes)</h3>
-        <div class="space-y-4">
-            {% for q in top_questions %}
-            <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
-                <p class="font-medium truncate mr-4">{{ q.text }}</p>
-                <span class="px-3 py-1 bg-primary text-background-dark font-bold rounded-lg">{{ q.votes_count }}</span>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">trending_up</span>
+                Questions récentes
+            </h3>
+            <div class="space-y-3 max-h-96 overflow-y-auto">
+                {% for q in top_questions %}
+                <div class="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-sm text-slate-700 dark:text-slate-200 truncate">{{ q.text }}</p>
+                        <p class="text-xs text-slate-400 mt-1">Par: {{ q.author_name }}</p>
+                    </div>
+                    <span class="px-3 py-1 bg-primary/20 text-primary font-bold rounded-lg text-xs flex-shrink-0 whitespace-nowrap">
+                        {% if q.is_featured %}⭐ Featured{% else %}{{ q.created_at|date:"H:i" }}{% endif %}
+                    </span>
+                </div>
+                {% empty %}
+                <div class="text-center py-10 text-slate-500">
+                    <span class="material-symbols-outlined text-4xl block mb-2 opacity-50">comment</span>
+                    <p class="italic">Aucune question pour le moment</p>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                <span class="material-symbols-outlined text-amber-500">how_to_reg</span>
+                Résumé de l'engagement
+            </h3>
+            <div class="space-y-4">
+                <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border-l-4 border-primary">
+                    <p class="text-xs text-slate-500 uppercase tracking-wider font-bold">Questions posées</p>
+                    <p class="text-3xl font-black text-primary">{{ top_questions|length }}</p>
+                </div>
+                <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border-l-4 border-emerald-500">
+                    <p class="text-xs text-slate-500 uppercase tracking-wider font-bold">Questions en avant</p>
+                    <p class="text-3xl font-black text-emerald-500">{{ top_questions|dictsort:"is_featured"|length }}</p>
+                </div>
+                <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border-l-4 border-blue-500">
+                    <p class="text-xs text-slate-500 uppercase tracking-wider font-bold">Répondues</p>
+                    <p class="text-3xl font-black text-blue-500">{{ top_questions|dictsort:"is_answered"|length }}</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

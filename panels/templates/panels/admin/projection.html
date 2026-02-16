@@ -12,24 +12,34 @@
     <div class="space-y-6">
         <div class="flex items-center justify-center gap-4">
             <span class="relative flex h-3 w-3">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full {% if panel.status == 'active' %}bg-primary{% else %}bg-slate-500{% endif %} opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 {% if panel.status == 'active' %}bg-primary{% else %}bg-slate-500{% endif %}"></span>
             </span>
-            <span class="px-6 py-2 bg-primary/10 text-primary rounded-full text-xl font-bold uppercase tracking-widest border border-primary/20">
-                Direct
+            <span class="px-6 py-2 bg-white/5 text-white rounded-full text-xl font-bold uppercase tracking-widest border border-white/10">
+                {% if panel.status == 'active' %}Direct{% else %}Pause / Attente{% endif %}
             </span>
         </div>
         
         <h1 class="text-6xl md:text-7xl lg:text-8xl font-black text-white leading-tight max-w-6xl px-4">
-            {% if featured_question %}
-                <span class="text-primary">"</span>{{ featured_question.text }}<span class="text-primary">"</span>
+            {% if panel.status == 'closed' %}
+                <span class="text-primary block mb-4">{{ panel.welcome_title }}</span>
+                <div class="text-3xl md:text-4xl text-slate-400 font-medium">
+                    {{ panel.welcome_message }}
+                </div>
             {% else %}
-                <span class="text-slate-500 italic">En attente de vos questions...</span>
+                {% if featured_question %}
+                    <span class="text-primary">"</span>{{ featured_question.text }}<span class="text-primary">"</span>
+                {% else %}
+                    <div class="flex flex-col items-center gap-6">
+                        <span class="text-slate-500 italic">En attente de vos questions...</span>
+                        <p class="text-2xl text-slate-400">Scanner le QR Code pour participer</p>
+                    </div>
+                {% endif %}
             {% endif %}
         </h1>
     </div>
 
-    {% if featured_question %}
+    {% if featured_question and panel.status == 'active' %}
     <div class="flex items-center gap-8 p-8 bg-slate-800/40 backdrop-blur-md rounded-3xl border border-white/10 shadow-2xl">
         <div class="size-20 bg-primary rounded-2xl flex items-center justify-center text-4xl font-black text-[#111618] transform -rotate-3">
             {{ featured_question.author_name|first|upper }}
@@ -43,10 +53,8 @@
 </div>
 
 <script>
-    // On vérifie le contenu toutes les 5 secondes
-    // Pour faire encore mieux plus tard, on utilisera AJAX pour éviter le rechargement de page
+    // Rafraîchissement automatique toutes les 5 secondes pour capter les changements
     setInterval(function() {
-        // Optionnel : ne recharger que si la fenêtre a le focus ou via AJAX
         location.reload();
     }, 5000);
 </script>

@@ -71,10 +71,21 @@ def panels_list_view(request):
     return render(request, 'panels/admin/panels_list.html', {'panels': panels})
 
 # Dans panels/views.py
+# Dans panels/views.py
 @login_required
-def questions_manage_view(request):
-    all_q = Question.objects.filter(panel__owner=request.user)
+def questions_manage_view(request, panel_id=None):
+    # Le panel_id doit toujours être fourni via l'URL
+    if panel_id:
+        all_q = Question.objects.filter(panel_id=panel_id, panel__owner=request.user)
+    else:
+        # Fallback : si pas de panel_id, on prend le premier panel de l'utilisateur
+        first_panel = Panel.objects.filter(owner=request.user).first()
+        if not first_panel:
+            return redirect('dashboard')
+        all_q = Question.objects.filter(panel=first_panel)
+    
     context = {
+        'panels': Panel.objects.filter(owner=request.user).order_by('-created_at'),
         'questions': all_q.order_by('-created_at'),
         'count_new': all_q.filter(is_answered=False).count(),
         'count_answered': all_q.filter(is_answered=True).count(),
@@ -102,15 +113,37 @@ def toggle_question_status(request, q_id):
 
 
 # Vue pour la Projection
-def projection_view(request):
-    # On utilise 'created_at' car 'updated_at' n'existe pas dans ton modèle Question
-    featured = Question.objects.filter(is_featured=True).order_by('-created_at').first()
-    return render(request, 'panels/admin/projection.html', {'featured_question': featured})
-
+@login_required
+def projection_view(request, panel_id):
+    # 1. On récupère le panel spécifique grâce à son ID
+    panel = get_object_or_404(Panel, id=panel_id, owner=request.user)
+    
+    # 2. On récupère la question mise en avant uniquement pour CE panel
+    featured = Question.objects.filter(
+        panel=panel,
+        is_featured=True
+    ).order_by('-created_at').first()
+    
+    # 3. On envoie les deux à la page HTML
+    return render(request, 'panels/admin/projection.html', {
+        'panels': Panel.objects.filter(owner=request.user).order_by('-created_at'),
+        'featured_question': featured,
+        'panel': panel
+    })
 # Vue pour les Votes
+@login_required
 def votes_view(request):
-    top_q = Question.objects.all().order_by('-created_at')[:5]
-    return render(request, 'panels/admin/votes.html', {'top_questions': top_q})
+    # Récupérer le premier panel pour afficher les votes associés
+    first_panel = Panel.objects.filter(owner=request.user).first()
+    if first_panel:
+        top_q = Question.objects.filter(panel=first_panel).order_by('-created_at')[:10]
+    else:
+        top_q = Question.objects.none()
+    
+    return render(request, 'panels/admin/votes.html', {
+        'panels': Panel.objects.filter(owner=request.user).order_by('-created_at'),
+        'top_questions': top_q
+    })
 
 # Vue pour les Thèmes (Celle qui causait l'erreur)
 @login_required
@@ -139,8 +172,8 @@ def themes_view(request, panel_id=None):
                 title=title,
                 is_active=True
             )
-            # Redirige vers la page de thèmes pour ce panel (sans exiger d'argument dans l'URL)
-            return redirect('themes')
+            # Redirige vers la page de thèmes pour ce panel
+            return redirect('panel_themes', panel_id=panel.id)
 
 
 
@@ -156,6 +189,7 @@ def themes_view(request, panel_id=None):
     themes_sorted = sorted(themes_list, key=lambda x: x.vote_count, reverse=True)
             
     context = {
+        'panels': Panel.objects.filter(owner=request.user).order_by('-created_at'),
         'panel': panel, # Important pour le template !
         'themes': themes_sorted,
         'total_votes': total_votes,
@@ -164,26 +198,12 @@ def themes_view(request, panel_id=None):
     return render(request, 'panels/admin/themes.html', context)
 
 def public_index(request):
-    themes = Theme.objects.filter(is_active=True).order_by('order')
-    return render(request, 'panels/public/index.html', {'themes': themes})
+    # Page d'accueil publique - redirige vers le dashboard ou affiche un message
+    return redirect('landing')
 
 def submit_question(request):
-    if request.method == "POST":
-        import json
-        data = json.loads(request.body)
-        
-        # On récupère le premier panel par défaut pour le moment
-        panel = Panel.objects.first()
-        
-        new_q = Question.objects.create(
-            panel=panel,
-            text=data.get('text'),
-            author_name=data.get('author', 'Anonyme'),
-            is_approved=True # On peut changer ça pour modération manuelle
-        )
-        
-        return JsonResponse({"status": "success", "id": new_q.id})
-    return JsonResponse({"status": "error"}, status=400)
+    # Cette fonction ne doit plus être utilisée - les questions vont via public_panel_view
+    return JsonResponse({"status": "error", "message": "Utilisez le formulaire public"}, status=400)
 
 
 from django.utils import timezone
@@ -206,7 +226,9 @@ def panel_settings(request, panel_id):
         panel.save()
         return redirect('dashboard')
         
-    return render(request, 'panels/admin/settings.html', {'panel': panel})
+    # Redirection si l'utilisateur accède directement à cette URL
+    # Les paramètres se gèrent via le modal dans le dashboard
+    return redirect('dashboard')
 
 def delete_panel(request, panel_id):
     if request.method == "POST":
@@ -216,6 +238,7 @@ def delete_panel(request, panel_id):
     return redirect('dashboard')
 
 def panel_view(request, unique_id):
+    # Fonction obsolète - utilisée publiquement
     panel = get_object_or_404(Panel, unique_id=unique_id)
     themes = panel.themes.filter(is_active=True)
     return render(request, 'panels/public/live.html', {'panel': panel, 'themes': themes})
@@ -225,28 +248,42 @@ def delete_theme(request, theme_id):
     theme = get_object_or_404(Theme, id=theme_id, panel__owner=request.user)
     panel_id = theme.panel.id
     theme.delete()
-    return redirect('themes', panel_id=panel_id)
+    return redirect('panel_themes', panel_id=panel_id)
 
 
 # Change panel_id par unique_id
 def public_panel_view(request, unique_id):
     # On cherche par unique_id (UUID) pour plus de sécurité
     panel = get_object_or_404(Panel, unique_id=unique_id)
+    
+    # Vérifier que le panel est actif
+    if panel.status != 'active':
+        return render(request, 'panels/public/waiting_room.html', {'panel': panel})
+    
     themes = panel.themes.filter(is_active=True)
     
     if request.method == "POST":
-        author = request.POST.get('author_name', 'Anonyme')
-        text = request.POST.get('question_text')
+        author = request.POST.get('author_name', 'Anonyme').strip() or 'Anonyme'
+        text = request.POST.get('question_text', '').strip()
         if text:
             Question.objects.create(panel=panel, author_name=author, text=text)
             # On redirige vers l'UUID
             return redirect('public_view', unique_id=panel.unique_id)
 
-    return render(request, 'panels/public/live.html', {'panel': panel, 'themes': themes})
+    context = {
+        'panel': panel,
+        'themes': themes,
+        'total_votes': Vote.objects.filter(theme__panel=panel).count()
+    }
+    return render(request, 'panels/public/live.html', context)
 
 
 def cast_vote_ajax(request, theme_id):
-    theme = get_object_or_404(Theme, id=theme_id)
+    # Vérifier que le thème existe et qu'il est actif
+    theme = get_object_or_404(Theme, id=theme_id, is_active=True)
+    # Vérifier que le panel est actif
+    if theme.panel.status != 'active':
+        return JsonResponse({'status': 'error', 'message': 'Le panel n\'est pas actif'}, status=400)
     Vote.objects.create(theme=theme)
     return JsonResponse({'status': 'ok'})
 
