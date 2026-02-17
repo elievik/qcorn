@@ -169,15 +169,18 @@ X_FRAME_OPTIONS = 'DENY'
 
 CSRF_TRUSTED_ORIGINS = [
     'https://web-production-a522d.up.railway.app',
+    'https://*.up.railway.app',
     'http://localhost:8000',
 ]
 
 
 SECURE_CONTENT_SECURITY_POLICY = {
     "default-src": ("'self'",),
-    "script-src": ("'self'", "'unsafe-inline'", "*.googleapis.com", "*.gstatic.com", "*.firebaseapp.com", "*.firebase.com"),
-    "connect-src": ("'self'", "*.googleapis.com", "*.firebaseio.com", "*.firebaseapp.com"),
+    "script-src": ("'self'", "'unsafe-inline'", "*.googleapis.com", "*.gstatic.com", "*.firebaseapp.com", "*.firebase.com", "*.up.railway.app"),
+    "connect-src": ("'self'", "*.googleapis.com", "*.firebaseio.com", "*.firebaseapp.com", "*.up.railway.app"),
     "frame-src": ("'self'", "*.firebaseapp.com", "accounts.google.com"),
+    "style-src": ("'self'", "'unsafe-inline'", "*.googleapis.com", "*.gstatic.com"),
+    "img-src": ("'self'", "data:", "*.googleapis.com", "*.gstatic.com"),
 }
 
 # WhiteNoise compression

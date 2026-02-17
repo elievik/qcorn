@@ -12,7 +12,7 @@ class Panel(models.Model):
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="panels")
     title = models.CharField(max_length=200)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(unique=True, blank=True, null=True)
     unique_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='active')

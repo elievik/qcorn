@@ -1,4 +1,3 @@
-
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Panel  # On importe ton modèle Panel
@@ -40,7 +39,6 @@ def dashboard_view(request):
                 img.save(buffer, format="PNG")
                 panel.qr_code = base64.b64encode(buffer.getvalue()).decode()
             except Exception as e:
-                print(f"Erreur QR Code pour panel {panel.id}: {e}")
                 panel.qr_code = None  # Fallback
         
         context = {
@@ -52,7 +50,6 @@ def dashboard_view(request):
         return render(request, 'panels/admin/dashboard.html', context)
     
     except Exception as e:
-        print(f"Erreur dashboard_view: {e}")
         messages.error(request, f'Erreur lors du chargement du dashboard: {str(e)}')
         # Retourner un dashboard vide en cas d'erreur
         context = {
@@ -70,40 +67,21 @@ def create_panel(request):
             # On récupère le titre tapé dans la Modal
             title = request.POST.get('title')
             
-            print(f"DEBUG: title reçu = '{title}'")  # Debug
-            print(f"DEBUG: user = {request.user}")  # Debug
-            
             if not title or not title.strip():
                 messages.error(request, 'Le titre du panel ne peut pas être vide.')
                 return redirect('dashboard')
-            
-            # Générer un slug unique à partir du titre
-            import django.utils.text
-            base_slug = django.utils.text.slugify(title.strip())
-            unique_slug = base_slug
-            counter = 1
-            
-            # S'assurer que le slug est unique
-            while Panel.objects.filter(slug=unique_slug).exists():
-                unique_slug = f"{base_slug}-{counter}"
-                counter += 1
             
             # On crée l'entrée dans la base de données
             # 'owner=request.user' lie automatiquement le panel à la personne connectée
             panel = Panel.objects.create(
                 title=title.strip(),
-                slug=unique_slug,
                 owner=request.user,
                 status='active'
             )
             
-            print(f"DEBUG: panel créé avec ID = {panel.id}")  # Debug
             messages.success(request, f'Panel "{panel.title}" créé avec succès!')
             
         except Exception as e:
-            print(f"ERREUR create_panel: {type(e).__name__}: {e}")  # Debug détaillé
-            import traceback
-            print(f"TRACEBACK: {traceback.format_exc()}")  # Debug complet
             messages.error(request, f'Erreur lors de la création du panel: {str(e)}')
             
     # Une fois créé, on recharge la page du dashboard
