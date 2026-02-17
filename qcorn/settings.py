@@ -168,7 +168,7 @@ SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
 X_FRAME_OPTIONS = 'DENY'
 
 CSRF_TRUSTED_ORIGINS = [
-    'https://lovely-laughter-production.railway.app',
+    'https://web-production-a522d.up.railway.app',
     'http://localhost:8000',
 ]
 
