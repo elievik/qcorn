@@ -231,24 +231,36 @@ def submit_question(request):
     return JsonResponse({"status": "error", "message": "Utilisez le formulaire public"}, status=400)
 
 
-from django.utils import timezone
-
 def panel_settings(request, panel_id):
     panel = get_object_or_404(Panel, id=panel_id, owner=request.user)
     
     if request.method == "POST":
-        panel.title = request.POST.get('title')
-        panel.status = request.POST.get('status')
+        panel.title = request.POST.get('title', panel.title)
+        panel.status = request.POST.get('status', panel.status)
         
         # Gestion de la programmation
-        start_dt = request.POST.get('scheduled_start')
-        if start_dt:
-            panel.scheduled_start = start_dt
+        start_dt_str = request.POST.get('scheduled_start')
+        if start_dt_str:
+            from datetime import datetime
+            try:
+                # Format attendu: "YYYY-MM-DD HH:MM"
+                start_dt = datetime.strptime(start_dt_str, "%Y-%m-%d %H:%M")
+                panel.scheduled_start = start_dt
+            except ValueError:
+                messages.error(request, 'Format de date invalide. Utilisez JJ/MM/AAAA HH:MM')
+        else:
+            panel.scheduled_start = None
             
-        panel.duration_minutes = request.POST.get('duration')
+        duration_str = request.POST.get('duration')
+        if duration_str and duration_str.isdigit():
+            panel.duration_minutes = int(duration_str)
+        else:
+            panel.duration_minutes = None
+            
         panel.auto_close = 'auto_close' in request.POST
         
         panel.save()
+        messages.success(request, 'Paramètres du panel mis à jour!')
         return redirect('dashboard')
         
     # Redirection si l'utilisateur accède directement à cette URL
