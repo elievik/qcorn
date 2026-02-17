@@ -174,14 +174,5 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 
-SECURE_CONTENT_SECURITY_POLICY = {
-    "default-src": ("'self'",),
-    "script-src": ("'self'", "'unsafe-inline'", "*.googleapis.com", "*.gstatic.com", "*.firebaseapp.com", "*.firebase.com", "*.up.railway.app"),
-    "connect-src": ("'self'", "*.googleapis.com", "*.firebaseio.com", "*.firebaseapp.com", "*.up.railway.app"),
-    "frame-src": ("'self'", "*.firebaseapp.com", "accounts.google.com"),
-    "style-src": ("'self'", "'unsafe-inline'", "*.googleapis.com", "*.gstatic.com"),
-    "img-src": ("'self'", "data:", "*.googleapis.com", "*.gstatic.com"),
-}
-
 # WhiteNoise compression
 WHITENOISE_COMPRESS_OFFLINE = True
