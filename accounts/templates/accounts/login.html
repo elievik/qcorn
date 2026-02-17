@@ -156,30 +156,36 @@
             provider.addScope('profile');
             provider.addScope('email');
 
-            const result = await signInWithPopup(auth, provider);
-            const user = result.user;
+            const result = await signInWithRedirect(auth, provider);
             
-            // Obtenir l'ID token pour l'envoyer au backend
-            const idToken = await user.getIdToken();
+            // Pour signInWithRedirect, on doit écouter le résultat
+            getRedirectResult(auth, provider).then(async (result) => {
+                if (result.user) {
+                    const user = result.user;
+                    
+                    // Obtenir l'ID token pour l'envoyer au backend
+                    const idToken = await user.getIdToken();
 
-            // Envoyer l'ID token au backend Django
-            const response = await fetch('/api/auth/firebase-login/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    idToken: idToken  // ← Envoyer l'ID token sécurisé
-                })
+                    // Envoyer l'ID token au backend Django
+                    const response = await fetch('/api/auth/firebase-login/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({
+                            idToken: idToken  // ← Envoyer l'ID token sécurisé
+                        })
+                    });
+
+                    if (response.ok) {
+                        window.location.href = '/dashboard/';
+                    } else {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Erreur backend Django');
+                    }
+                }
             });
-
-            if (response.ok) {
-                window.location.href = '/dashboard/';
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Erreur backend Django');
-            }
 
         } catch (error) {
             console.error('Erreur Firebase:', error.code, error.message);
