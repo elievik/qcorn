@@ -3,6 +3,8 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.urls import reverse
+from django.utils.text import slugify
+
 
 class Panel(models.Model):
     STATUS_CHOICES = [
@@ -37,6 +39,14 @@ class Panel(models.Model):
             end_time = self.scheduled_start + timezone.timedelta(minutes=self.duration_minutes)
             return timezone.now() > end_time
         return False
+    
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            # Génère un slug à partir du titre + uuid pour garantir l'unicité
+            base_slug = slugify(self.title)
+            unique_suffix = str(self.unique_id)[:8]
+            self.slug = f"{base_slug}-{unique_suffix}"
+        super().save(*args, **kwargs)
 
 class Question(models.Model):
     panel = models.ForeignKey(Panel, on_delete=models.CASCADE, related_name="questions")

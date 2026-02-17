@@ -11,6 +11,8 @@ import qrcode
 import io
 import base64
 from django.urls import reverse
+from django.contrib import messages
+
 
 @login_required
 def dashboard_view(request):
