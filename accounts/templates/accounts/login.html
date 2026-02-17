@@ -143,6 +143,40 @@
 
     console.log('✅ Firebase v10 initialisé !');
 
+    // Vérifier s'il y a un résultat de redirection au chargement de la page
+    getRedirectResult(auth).then(async (result) => {
+        if (result.user) {
+            console.log('✅ Utilisateur authentifié via redirection:', result.user);
+            
+            const user = result.user;
+            
+            // Obtenir l'ID token pour l'envoyer au backend
+            const idToken = await user.getIdToken();
+
+            // Envoyer l'ID token au backend Django
+            const response = await fetch('/api/auth/firebase-login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    idToken: idToken
+                })
+            });
+
+            if (response.ok) {
+                window.location.href = '/dashboard/';
+            } else {
+                const errorData = await response.json();
+                console.error('Erreur backend:', errorData);
+                alert('❌ Erreur: ' + (errorData.message || 'Erreur backend Django'));
+            }
+        }
+    }).catch((error) => {
+        console.error('Erreur getRedirectResult:', error);
+    });
+
     // Rendre la fonction accessible globalement
     window.handleGoogleSignIn = async function() {
         const btn = document.getElementById('googleSignInBtn');
@@ -156,37 +190,9 @@
             provider.addScope('profile');
             provider.addScope('email');
 
-            const result = await signInWithRedirect(auth, provider);
+            // Lancer la redirection vers Google
+            await signInWithRedirect(auth, provider);
             
-            // Pour signInWithRedirect, on doit écouter le résultat
-            getRedirectResult(auth, provider).then(async (result) => {
-                if (result.user) {
-                    const user = result.user;
-                    
-                    // Obtenir l'ID token pour l'envoyer au backend
-                    const idToken = await user.getIdToken();
-
-                    // Envoyer l'ID token au backend Django
-                    const response = await fetch('/api/auth/firebase-login/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': getCookie('csrftoken')
-                        },
-                        body: JSON.stringify({
-                            idToken: idToken  // ← Envoyer l'ID token sécurisé
-                        })
-                    });
-
-                    if (response.ok) {
-                        window.location.href = '/dashboard/';
-                    } else {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || 'Erreur backend Django');
-                    }
-                }
-            });
-
         } catch (error) {
             console.error('Erreur Firebase:', error.code, error.message);
             alert('❌ Erreur : ' + error.message);
