@@ -77,7 +77,7 @@
                                         <span class="material-symbols-outlined text-[14px]">content_copy</span>
                                     </button>
                                     
-                                    <button onclick="openQR('{{ panel.qr_code }}', '{{ panel.title|escapejs }}')" class="text-slate-400 hover:text-primary flex items-center" title="Afficher le QR Code">
+                                    <button onclick="openQR('{{ panel.qr_code|default:"" }}', '{{ panel.title|escapejs }}')" class="text-slate-400 hover:text-primary flex items-center" title="Afficher le QR Code">
                                         <span class="material-symbols-outlined text-lg">qr_code_2</span>
                                     </button>
                                 </div>

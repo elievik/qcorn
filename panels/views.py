@@ -15,51 +15,96 @@ from django.urls import reverse
 
 @login_required
 def dashboard_view(request):
-    user_panels = Panel.objects.filter(owner=request.user).annotate(
-        questions_count=Count('questions'),
-        answered_count=Count('questions', filter=Q(questions__is_answered=True))
-    ).order_by('-created_at')
+    try:
+        user_panels = Panel.objects.filter(owner=request.user).annotate(
+            questions_count=Count('questions'),
+            answered_count=Count('questions', filter=Q(questions__is_answered=True))
+        ).order_by('-created_at')
+        
+        # Correction : Génération du lien UUID et du QR Code
+        for panel in user_panels:
+            try:
+                # On s'assure que l'URL utilise l'hôte actuel (ex: 127.0.0.1:8000)
+                public_url = request.build_absolute_uri(reverse('public_view', args=[panel.unique_id]))
+                panel.public_url = public_url
+                
+                # Génération du QR Code
+                qr = qrcode.QRCode(version=1, box_size=5, border=2)
+                qr.add_data(public_url)
+                qr.make(fit=True)
+                
+                # IMPORTANT : On force le format RGB pour éviter les erreurs d'affichage
+                img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
+                
+                buffer = io.BytesIO()
+                img.save(buffer, format="PNG")
+                panel.qr_code = base64.b64encode(buffer.getvalue()).decode()
+            except Exception as e:
+                print(f"Erreur QR Code pour panel {panel.id}: {e}")
+                panel.qr_code = None  # Fallback
+        
+        context = {
+            'panels': user_panels,
+            'total_panels': user_panels.count(),
+            'total_questions': sum(p.questions_count for p in user_panels),
+            'total_participants': 0,
+        }
+        return render(request, 'panels/admin/dashboard.html', context)
     
-    # Correction : Génération du lien UUID et du QR Code
-    for panel in user_panels:
-        # On s'assure que l'URL utilise l'hôte actuel (ex: 127.0.0.1:8000)
-        public_url = request.build_absolute_uri(reverse('public_view', args=[panel.unique_id]))
-        panel.public_url = public_url
-        
-        # Génération du QR Code
-        qr = qrcode.QRCode(version=1, box_size=5, border=2)
-        qr.add_data(public_url)
-        qr.make(fit=True)
-        
-        # IMPORTANT : On force le format RGB pour éviter les erreurs d'affichage
-        img = qr.make_image(fill_color="black", back_color="white").convert('RGB')
-        
-        buffer = io.BytesIO()
-        img.save(buffer, format="PNG")
-        panel.qr_code = base64.b64encode(buffer.getvalue()).decode()
-    
-    context = {
-        'panels': user_panels,
-        'total_panels': user_panels.count(),
-        'total_questions': sum(p.questions_count for p in user_panels),
-        'total_participants': 0,
-    }
-    return render(request, 'panels/admin/dashboard.html', context)
+    except Exception as e:
+        print(f"Erreur dashboard_view: {e}")
+        messages.error(request, f'Erreur lors du chargement du dashboard: {str(e)}')
+        # Retourner un dashboard vide en cas d'erreur
+        context = {
+            'panels': [],
+            'total_panels': 0,
+            'total_questions': 0,
+            'total_participants': 0,
+        }
+        return render(request, 'panels/admin/dashboard.html', context)
 
 @login_required
 def create_panel(request):
     if request.method == 'POST':
-        # On récupère le titre tapé dans la Modal
-        title = request.POST.get('title')
-        
-        if title:
+        try:
+            # On récupère le titre tapé dans la Modal
+            title = request.POST.get('title')
+            
+            print(f"DEBUG: title reçu = '{title}'")  # Debug
+            print(f"DEBUG: user = {request.user}")  # Debug
+            
+            if not title or not title.strip():
+                messages.error(request, 'Le titre du panel ne peut pas être vide.')
+                return redirect('dashboard')
+            
+            # Générer un slug unique à partir du titre
+            import django.utils.text
+            base_slug = django.utils.text.slugify(title.strip())
+            unique_slug = base_slug
+            counter = 1
+            
+            # S'assurer que le slug est unique
+            while Panel.objects.filter(slug=unique_slug).exists():
+                unique_slug = f"{base_slug}-{counter}"
+                counter += 1
+            
             # On crée l'entrée dans la base de données
             # 'owner=request.user' lie automatiquement le panel à la personne connectée
-            Panel.objects.create(
-                title=title,
+            panel = Panel.objects.create(
+                title=title.strip(),
+                slug=unique_slug,
                 owner=request.user,
                 status='active'
             )
+            
+            print(f"DEBUG: panel créé avec ID = {panel.id}")  # Debug
+            messages.success(request, f'Panel "{panel.title}" créé avec succès!')
+            
+        except Exception as e:
+            print(f"ERREUR create_panel: {type(e).__name__}: {e}")  # Debug détaillé
+            import traceback
+            print(f"TRACEBACK: {traceback.format_exc()}")  # Debug complet
+            messages.error(request, f'Erreur lors de la création du panel: {str(e)}')
             
     # Une fois créé, on recharge la page du dashboard
     return redirect('dashboard')
