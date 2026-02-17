@@ -10,6 +10,10 @@ from django.conf import settings
 import json
 import logging
 import os
+from firebase_admin import auth as firebase_auth
+from .firebase_init import initialize_firebase
+
+initialize_firebase()
 
 logger = logging.getLogger(__name__)
 
@@ -80,20 +84,23 @@ def logout_view(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def firebase_login(request):
-    """
-    Vue pour gérer la connexion/inscription via Firebase
-    Reçoit l'ID token Firebase du client et crée/synchronise l'utilisateur Django
-    """
     try:
         data = json.loads(request.body)
-        firebase_uid = data.get('uid')
-        email = data.get('email')
-        display_name = data.get('displayName', email.split('@')[0])
-        photo_url = data.get('photoURL')
-        
-        if not firebase_uid or not email:
-            return JsonResponse({'error': 'Données manquantes'}, status=400)
-        
+        id_token = data.get('idToken')  # ← Token envoyé par le frontend
+
+        if not id_token:
+            return JsonResponse({'error': 'Token manquant'}, status=400)
+
+        # ✅ Vérification sécurisée
+        decoded_token = firebase_auth.verify_id_token(id_token)
+        email = decoded_token.get('email')
+        firebase_uid = decoded_token.get('uid')
+        display_name = decoded_token.get('name', email.split('@')[0])
+        photo_url = decoded_token.get('picture', '')
+
+        if not email:
+            return JsonResponse({'error': 'Email manquant dans le token'}, status=400)
+
         # Récupérer ou créer l'utilisateur Django
         user, created = User.objects.get_or_create(
             email=email,
@@ -103,27 +110,13 @@ def firebase_login(request):
                 'last_name': ' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else '',
             }
         )
-        
-        if not created:
-            # Mettre à jour le nom si c'est différent
-            user.first_name = display_name.split()[0] if display_name else ''
-            user.last_name = ' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else ''
-            user.save()
-        
-        # Connecter l'utilisateur
-        auth_login(request, user)
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Connexion réussie',
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'username': user.username,
-                'display_name': user.get_full_name() or user.username
-            }
-        })
-        
+
+        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
+        return JsonResponse({'success': True})
+
+    except firebase_auth.InvalidIdTokenError:
+        return JsonResponse({'error': 'Token Firebase invalide'}, status=401)
     except Exception as e:
         logger.error(f"Erreur Firebase login: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
@@ -132,26 +125,29 @@ def firebase_login(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def firebase_register(request):
-    """
-    Vue pour gérer l'inscription via Firebase avec données personnalisées
-    """
     try:
         data = json.loads(request.body)
-        firebase_uid = data.get('uid')
-        email = data.get('email')
-        display_name = data.get('displayName', '')
-        photo_url = data.get('photoURL', '')
-        
-        if not firebase_uid or not email:
-            return JsonResponse({'error': 'Données manquantes'}, status=400)
-        
+        id_token = data.get('idToken')  # ← Token envoyé par le frontend
+
+        if not id_token:
+            return JsonResponse({'error': 'Token manquant'}, status=400)
+
+        # ✅ Vérification sécurisée
+        decoded_token = firebase_auth.verify_id_token(id_token)
+        email = decoded_token.get('email')
+        firebase_uid = decoded_token.get('uid')
+        display_name = decoded_token.get('name', email.split('@')[0])
+        photo_url = decoded_token.get('picture', '')
+
+        if not email:
+            return JsonResponse({'error': 'Email manquant dans le token'}, status=400)
+
         # Vérifier si l'utilisateur existe déjà
         if User.objects.filter(email=email).exists():
             return JsonResponse({'error': 'Un compte avec cet email existe déjà'}, status=400)
-        
-        # Créer l'utilisateur Django
+
+        # Créer l'utilisateur Django avec username unique
         username = email.split('@')[0]
-        # Assurer l'unicité du username
         base_username = username
         counter = 1
         while User.objects.filter(username=username).exists():
@@ -164,21 +160,13 @@ def firebase_register(request):
             first_name=display_name.split()[0] if display_name else '',
             last_name=' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else '',
         )
-        
-        # Connecter l'utilisateur
-        auth_login(request, user)
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Inscription réussie',
-            'user': {
-                'id': user.id,
-                'email': user.email,
-                'username': user.username,
-                'display_name': user.get_full_name() or user.username
-            }
-        })
-        
+
+        auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+
+        return JsonResponse({'success': True})
+
+    except firebase_auth.InvalidIdTokenError:
+        return JsonResponse({'error': 'Token Firebase invalide'}, status=401)
     except Exception as e:
         logger.error(f"Erreur Firebase register: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)

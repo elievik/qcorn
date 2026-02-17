@@ -100,7 +100,7 @@
                 </div>
 
                 <!-- Bouton Google Firebase -->
-                <button type="button" onclick="handleGoogleSignUp()" id="googleSignUpBtn" class="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors" disabled>
+                <button type="button" onclick="handleGoogleSignUp()" id="googleSignUpBtn" class="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
                     <img alt="G" class="w-5 h-5" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
                     <span id="googleBtnText">S'inscrire avec Google</span>
                 </button>
@@ -114,88 +114,55 @@
     </div>
 </div>
 
-</body>
-</html>
-
 {{ firebase_config|json_script:"firebase-config" }}
 
-<!-- Scripts Firebase AVANT les autres scripts -->
-<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js"></script>
+<!-- Remplace les 2 anciens scripts par ces imports ES modules -->
+<script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js';
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js';
 
-<!-- Notre code JavaScript qui utilise Firebase -->
-<script>
-    // Variable globale pour stocker l'état de Firebase
-    let firebaseReady = false;
-    let auth = null;
-
-    // Fonction pour vérifier si Firebase est prêt
-    function checkFirebaseReady() {
-        return typeof firebase !== 'undefined' && firebase.auth && firebase.apps && firebase.apps.length > 0;
+    // Config Firebase
+    let firebaseConfig;
+    try {
+        const configElement = document.getElementById('firebase-config');
+        firebaseConfig = JSON.parse(configElement.textContent);
+    } catch (e) {
+        firebaseConfig = {
+            apiKey: "AIzaSyCbaAEonMkoqsUMDCvV7xWPdbL5jY9p1gE",
+            authDomain: "qroom-bb7db.firebaseapp.com",
+            projectId: "qroom-bb7db",
+            storageBucket: "qroom-bb7db.firebasestorage.app",
+            messagingSenderId: "113139462472",
+            appId: "1:113139462472:web:416ddd12726e21605f837d"
+        };
     }
 
-    // Attendre que les scripts Firebase se chargent et s'initialisent
-    window.addEventListener('load', function() {
-        // Attendre un peu pour que les scripts Firebase soient complètement chargés
-        setTimeout(function() {
-            // Utiliser la configuration Firebase injectée par Django
-            const firebaseConfig = JSON.parse(document.getElementById('firebase-config').textContent);
+    // Initialisation Firebase v10
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-            // Vérifier que Firebase est disponible
-            if (typeof firebase === 'undefined') {
-                throw new Error('Firebase SDK non chargé');
-            }
+    console.log('✅ Firebase v10 initialisé !');
 
-            // Initialiser Firebase
-            try {
-                if (!firebase.apps.length) {
-                    firebase.initializeApp(firebaseConfig);
-                }
-                auth = firebase.auth();
-                firebaseReady = true;
-                console.log('✅ Firebase initialisé avec succès');
-                
-                // Activer le bouton Google si Firebase est prêt
-                const googleBtn = document.getElementById('googleSignUpBtn');
-                if (googleBtn) {
-                    googleBtn.disabled = false;
-                }
-            } catch (error) {
-                if (!error.message.includes('duplicate app')) {
-                    console.error('Erreur initialisation Firebase:', error);
-                }
-            }
-        }, 500); // Attendre 500ms pour que les scripts soient chargés
-    });
-
-    // Gestionnaire pour l'inscription Google
-    async function handleGoogleSignUp() {
-        // Vérifier que Firebase est prêt
-        if (!firebaseReady || !auth) {
-            console.error('Firebase n\'est pas encore prêt');
-            alert('⏳ Veuillez patienter pendant que Firebase se charge...');
-            return;
-        }
-
+    // Rendre la fonction accessible globalement
+    window.handleGoogleSignUp = async function() {
         const btn = document.getElementById('googleSignUpBtn');
         const btnText = document.getElementById('googleBtnText');
-        
+
         try {
             btn.disabled = true;
             btnText.textContent = 'Inscription en cours...';
 
-            // Créer un provider Google
-            const provider = new firebase.auth.GoogleAuthProvider();
-            
-            // Ajouter les données du profil
+            const provider = new GoogleAuthProvider();
             provider.addScope('profile');
             provider.addScope('email');
 
-            // Se connecter avec popup
-            const result = await auth.signInWithPopup(provider);
+            const result = await signInWithPopup(auth, provider);
             const user = result.user;
+            
+            // Obtenir l'ID token pour l'envoyer au backend
+            const idToken = await user.getIdToken();
 
-            // Envoyer les données au backend Django
+            // Envoyer l'ID token au backend Django
             const response = await fetch('/api/auth/firebase-register/', {
                 method: 'POST',
                 headers: {
@@ -203,31 +170,27 @@
                     'X-CSRFToken': getCookie('csrftoken')
                 },
                 body: JSON.stringify({
-                    uid: user.uid,
-                    email: user.email,
-                    displayName: user.displayName,
-                    photoURL: user.photoURL
+                    idToken: idToken  // ← Envoyer l'ID token sécurisé
                 })
             });
 
             if (response.ok) {
                 window.location.href = '/dashboard/';
             } else {
-                throw new Error('Échec de l\'authentification backend');
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Erreur backend Django');
             }
 
         } catch (error) {
-            console.error('Erreur lors de l\'inscription:', error);
-            console.error('Code erreur Firebase:', error.code);
-            console.error('Message:', error.message);
-            alert('❌ Erreur d\'inscription:\n\n' + error.message + '\n\n(Vérifiez la console - F12)');
+            console.error('Erreur Firebase:', error.code, error.message);
+            alert('❌ Erreur : ' + error.message);
             btn.disabled = false;
-            btnText.textContent = 'S\'inscrire avec Google';
+            btnText.textContent = 'Continuer avec Google';
         }
-    }
+    };
 
-    // Helper pour obtenir le CSRF token
-    function getCookie(name) {
+    // Helper CSRF
+    window.getCookie = function(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
             const cookies = document.cookie.split(';');
@@ -240,5 +203,7 @@
             }
         }
         return cookieValue;
-    }
+    };
 </script>
+</body>
+</html>

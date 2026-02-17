@@ -166,8 +166,18 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = config('SECURE_HSTS_INCLUDE_SUBDOMAINS', defaul
 SECURE_HSTS_PRELOAD = config('SECURE_HSTS_PRELOAD', default=False, cast=bool)
 SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
 X_FRAME_OPTIONS = 'DENY'
+
+CSRF_TRUSTED_ORIGINS = [
+    'https://lovely-laughter-production.railway.app',
+    'http://localhost:8000',
+]
+
+
 SECURE_CONTENT_SECURITY_POLICY = {
     "default-src": ("'self'",),
+    "script-src": ("'self'", "'unsafe-inline'", "*.googleapis.com", "*.gstatic.com", "*.firebaseapp.com", "*.firebase.com"),
+    "connect-src": ("'self'", "*.googleapis.com", "*.firebaseio.com", "*.firebaseapp.com"),
+    "frame-src": ("'self'", "*.firebaseapp.com", "accounts.google.com"),
 }
 
 # WhiteNoise compression
