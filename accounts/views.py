@@ -87,6 +87,8 @@ def firebase_login(request):
     try:
         data = json.loads(request.body)
         id_token = data.get('idToken')  # ← Token envoyé par le frontend
+        
+        print(f"DEBUG: id_token reçu = {id_token[:50]}..." if id_token else "DEBUG: id_token = None")
 
         if not id_token:
             return JsonResponse({'error': 'Token manquant'}, status=400)
@@ -97,6 +99,8 @@ def firebase_login(request):
         firebase_uid = decoded_token.get('uid')
         display_name = decoded_token.get('name', email.split('@')[0])
         photo_url = decoded_token.get('picture', '')
+        
+        print(f"DEBUG: Utilisateur Firebase = {email}, UID = {firebase_uid}")
 
         if not email:
             return JsonResponse({'error': 'Email manquant dans le token'}, status=400)
@@ -110,14 +114,19 @@ def firebase_login(request):
                 'last_name': ' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else '',
             }
         )
+        
+        print(f"DEBUG: User Django {'créé' if created else 'existant'} = {user.username} (ID: {user.id})")
 
         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        print(f"DEBUG: Utilisateur connecté avec succès")
 
-        return JsonResponse({'success': True})
+        return JsonResponse({'success': True, 'created': created})
 
-    except firebase_auth.InvalidIdTokenError:
+    except firebase_auth.InvalidIdTokenError as e:
+        print(f"DEBUG: Token Firebase invalide = {str(e)}")
         return JsonResponse({'error': 'Token Firebase invalide'}, status=401)
     except Exception as e:
+        print(f"DEBUG: Erreur Firebase login = {str(e)}")
         logger.error(f"Erreur Firebase login: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
@@ -128,6 +137,8 @@ def firebase_register(request):
     try:
         data = json.loads(request.body)
         id_token = data.get('idToken')  # ← Token envoyé par le frontend
+        
+        print(f"DEBUG REGISTER: id_token reçu = {id_token[:50]}..." if id_token else "DEBUG REGISTER: id_token = None")
 
         if not id_token:
             return JsonResponse({'error': 'Token manquant'}, status=400)
@@ -138,35 +149,44 @@ def firebase_register(request):
         firebase_uid = decoded_token.get('uid')
         display_name = decoded_token.get('name', email.split('@')[0])
         photo_url = decoded_token.get('picture', '')
+        
+        print(f"DEBUG REGISTER: Utilisateur Firebase = {email}, UID = {firebase_uid}")
 
         if not email:
             return JsonResponse({'error': 'Email manquant dans le token'}, status=400)
 
         # Vérifier si l'utilisateur existe déjà
-        if User.objects.filter(email=email).exists():
-            return JsonResponse({'error': 'Un compte avec cet email existe déjà'}, status=400)
-
-        # Créer l'utilisateur Django avec username unique
-        username = email.split('@')[0]
-        base_username = username
-        counter = 1
-        while User.objects.filter(username=username).exists():
-            username = f"{base_username}{counter}"
-            counter += 1
-        
-        user = User.objects.create_user(
-            username=username,
+        user, created = User.objects.get_or_create(
             email=email,
-            first_name=display_name.split()[0] if display_name else '',
-            last_name=' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else '',
+            defaults={
+                'username': email.split('@')[0],
+                'first_name': display_name.split()[0] if display_name else '',
+                'last_name': ' '.join(display_name.split()[1:]) if len(display_name.split()) > 1 else '',
+            }
         )
 
+        # Si l'utilisateur existe déjà mais avec un username en conflit, générer un username unique
+        if not created:
+            base_username = email.split('@')[0]
+            username = base_username
+            counter = 1
+            while User.objects.filter(username=username).exclude(id=user.id).exists():
+                username = f"{base_username}{counter}"
+                counter += 1
+            user.username = username
+            user.save()
+
+        print(f"DEBUG REGISTER: User Django {'créé' if created else 'existant'} = {user.username} (ID: {user.id})")
+
         auth_login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        print(f"DEBUG REGISTER: Utilisateur connecté avec succès")
 
-        return JsonResponse({'success': True})
+        return JsonResponse({'success': True, 'created': created})
 
-    except firebase_auth.InvalidIdTokenError:
+    except firebase_auth.InvalidIdTokenError as e:
+        print(f"DEBUG REGISTER: Token Firebase invalide = {str(e)}")
         return JsonResponse({'error': 'Token Firebase invalide'}, status=401)
     except Exception as e:
+        print(f"DEBUG REGISTER: Erreur Firebase register = {str(e)}")
         logger.error(f"Erreur Firebase register: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
