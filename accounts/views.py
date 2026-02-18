@@ -17,18 +17,6 @@ initialize_firebase()
 
 logger = logging.getLogger(__name__)
 
-def get_firebase_config():
-    """Retourne la configuration Firebase depuis les variables d'environnement"""
-    return {
-        'apiKey': os.getenv('FIREBASE_API_KEY', 'AIzaSyCbaAEonMkoqsUMDCvV7xWPdbL5jY9p1gE'),
-        'authDomain': os.getenv('FIREBASE_AUTH_DOMAIN', 'qroom-bb7db.firebaseapp.com'),
-        'projectId': os.getenv('FIREBASE_PROJECT_ID', 'qroom-bb7db'),
-        'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET', 'qroom-bb7db.firebasestorage.app'),
-        'messagingSenderId': os.getenv('FIREBASE_MESSAGING_SENDER_ID', '113139462472'),
-        'appId': os.getenv('FIREBASE_APP_ID', '1:113139462472:web:416ddd12726e21605f837d'),
-        'measurementId': os.getenv('FIREBASE_MEASUREMENT_ID', 'G-Y58Z4PJM6F')
-    }
-
 def register_view(request):
     if request.method == 'POST':
         u_name = request.POST.get('username')
@@ -47,9 +35,7 @@ def register_view(request):
         except Exception as e:
             messages.error(request, f"Erreur : {e}")
             
-    return render(request, 'accounts/register.html', {
-        'firebase_config': get_firebase_config()
-    })
+    return render(request, 'accounts/register.html')
 
 def login_view(request):
     if request.method == 'POST':
@@ -70,9 +56,7 @@ def login_view(request):
         except User.DoesNotExist:
             messages.error(request, "Aucun compte trouvé avec cet email.")
             
-    return render(request, 'accounts/login.html', {
-        'firebase_config': get_firebase_config()
-    })
+    return render(request, 'accounts/login.html')
 
 def logout_view(request):
     logout(request)

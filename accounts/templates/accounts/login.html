@@ -95,17 +95,6 @@
                 </button>
             </form>
 
-            <div class="relative my-8">
-                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-[#3b4d54]"></div></div>
-                <div class="relative flex justify-center text-sm"><span class="px-2 bg-[#1c2427] text-[#9db2b9]">Ou</span></div>
-            </div>
-
-            <!-- Bouton Google Firebase -->
-            <button type="button" onclick="handleGoogleSignIn()" id="googleSignInBtn" class="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-3 hover:bg-gray-100 transition-colors">
-                <img alt="G" class="w-5 h-5" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"/>
-                <span id="googleBtnText">Continuer avec Google</span>
-            </button>
-
             <p class="mt-8 text-center text-sm text-[#9db2b9]">
                 Pas encore de compte ? 
                 <a href="{% url 'register' %}" class="text-primary font-semibold hover:underline">Créer un compte</a>
@@ -114,124 +103,18 @@
     </div>
 </div>
 
-{{ firebase_config|json_script:"firebase-config" }}
-
-<!-- Remplace les 2 anciens scripts par ces imports ES modules -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-    import { getAuth, signInWithRedirect, getRedirectResult, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js";
-
-    // Config Firebase
-    let firebaseConfig;
-    try {
-        const configElement = document.getElementById('firebase-config');
-        firebaseConfig = JSON.parse(configElement.textContent);
-    } catch (e) {
-        firebaseConfig = {
-            apiKey: "AIzaSyCbaAEonMkoqsUMDCvV7xWPdbL5jY9p1gE",
-            authDomain: "qroom-bb7db.firebaseapp.com",
-            projectId: "qroom-bb7db",
-            storageBucket: "qroom-bb7db.firebasestorage.app",
-            messagingSenderId: "113139462472",
-            appId: "1:113139462472:web:416ddd12726e21605f837d"
-        };
-    }
-
-    // Initialisation Firebase v10
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-
-    console.log('✅ Firebase v10 initialisé !');
-
-    // Vérifier s'il y a un résultat de redirection au chargement de la page
-    getRedirectResult(auth).then(async (result) => {
-        if (result.user) {
-            console.log('✅ Utilisateur authentifié via redirection:', result.user);
-            
-            const user = result.user;
-            
-            // Obtenir l'ID token pour l'envoyer au backend
-            const idToken = await user.getIdToken();
-
-            // Envoyer l'ID token au backend Django
-            const response = await fetch('/api/auth/firebase-login/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    idToken: idToken
-                })
-            });
-
-            if (response.ok) {
-                window.location.href = '/dashboard/';
-            } else {
-                const errorData = await response.json();
-                console.error('Erreur backend:', errorData);
-                alert('❌ Erreur: ' + (errorData.message || 'Erreur backend Django'));
-            }
-        }
-    }).catch((error) => {
-        console.error('Erreur getRedirectResult:', error);
-    });
-
-    // Rendre la fonction accessible globalement
-    window.handleGoogleSignIn = async function() {
-        const btn = document.getElementById('googleSignInBtn');
-        const btnText = document.getElementById('googleBtnText');
-
-        try {
-            btn.disabled = true;
-            btnText.textContent = 'Connexion en cours...';
-
-            const provider = new GoogleAuthProvider();
-            provider.addScope('profile');
-            provider.addScope('email');
-
-            // Lancer la redirection vers Google
-            await signInWithRedirect(auth, provider);
-            
-        } catch (error) {
-            console.error('Erreur Firebase:', error.code, error.message);
-            alert('❌ Erreur : ' + error.message);
-            btn.disabled = false;
-            btnText.textContent = 'Continuer avec Google';
-        }
-    };
-
-    // Helper CSRF
-    window.getCookie = function(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    };
-
-    // Toggle password visibility
-    document.addEventListener('DOMContentLoaded', function() {
-        const togglePassword = document.getElementById('togglePassword');
+<!-- Script pour le toggle du mot de passe -->
+<script>
+    document.getElementById('togglePassword').addEventListener('click', function() {
         const passwordInput = document.getElementById('password');
+        const toggleIcon = this.querySelector('span');
         
-        if (togglePassword && passwordInput) {
-            togglePassword.addEventListener('click', function() {
-                if (passwordInput.type === 'password') {
-                    passwordInput.type = 'text';
-                    togglePassword.textContent = 'visibility';
-                } else {
-                    passwordInput.type = 'password';
-                    togglePassword.textContent = 'visibility_off';
-                }
-            });
+        if (passwordInput.type === 'password') {
+            passwordInput.type = 'text';
+            toggleIcon.textContent = 'visibility';
+        } else {
+            passwordInput.type = 'password';
+            toggleIcon.textContent = 'visibility_off';
         }
     });
 </script>
