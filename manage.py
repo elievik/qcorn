@@ -5,8 +5,12 @@ import sys
 
 
 def main():
-    """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'qcorn.settings')
+    # Utiliser les settings de production sur Railway
+    if 'RAILWAY_ENVIRONMENT' in os.environ or 'RAILWAY_SERVICE_NAME' in os.environ:
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'qcorn.production_settings')
+    else:
+        os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'qcorn.settings')
+    
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
