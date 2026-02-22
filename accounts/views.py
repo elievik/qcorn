@@ -9,11 +9,14 @@ from django.views.decorators.http import require_http_methods
 from django.conf import settings
 import json
 import logging
-import os
-from firebase_admin import auth as firebase_auth
-from .firebase_init import initialize_firebase
 
-initialize_firebase()
+# Firebase désactivé pour éviter les erreurs en production
+try:
+    from firebase_admin import auth as firebase_auth
+    from .firebase_init import initialize_firebase
+    initialize_firebase()
+except:
+    logging.warning("Firebase non configuré - Mode développement")
 
 logger = logging.getLogger(__name__)
 

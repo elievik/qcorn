@@ -5,4 +5,11 @@ nixPkgs = ["nixpkgs.nix"]
 cmd = "pip install -r requirements.txt && python manage.py collectstatic --noinput --clear"
 
 [start]
-cmd = "gunicorn qcorn.wsgi:application --bind 0.0.0.0:$PORT"
+cmd = "gunicorn qcorn.wsgi:application --bind 0.0.0.0:$PORT --workers=3 --timeout=120"
+
+[variables]
+DEBUG = "False"
+ALLOWED_HOSTS = "web-production-a522d.up.railway.app"
+SECURE_SSL_REDIRECT = "True"
+CSRF_COOKIE_SECURE = "True"
+SESSION_COOKIE_SECURE = "True"

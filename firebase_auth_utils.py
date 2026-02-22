@@ -9,22 +9,28 @@ Installation:
 4. Décommentez le middleware dans settings.py si vous l'activez
 """
 
-import firebase_admin
-from firebase_admin import credentials, auth
-from django.conf import settings
+import logging
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareNotUsed
-import logging
 
 logger = logging.getLogger(__name__)
 
-# Initialiser Firebase Admin (facultatif, pour vérification côté serveur)
+# Firebase désactivé pour éviter les erreurs en production
 try:
-    if not firebase_admin._apps:
-        cred = credentials.Certificate(settings.BASE_DIR / 'firebase-key.json')
-        firebase_admin.initialize_app(cred)
-except Exception as e:
-    logger.warning(f"Firebase Admin non configuré (optionnel): {e}")
+    import firebase_admin
+    from firebase_admin import credentials, auth
+    from django.conf import settings
+    
+    # Initialiser Firebase Admin (facultatif, pour vérification côté serveur)
+    try:
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(settings.BASE_DIR / 'firebase-key.json')
+            firebase_admin.initialize_app(cred)
+    except Exception as e:
+        logger.warning(f"Firebase Admin non configuré (optionnel): {e}")
+        
+except ImportError:
+    logger.warning("Firebase non disponible - Mode développement")
 
 
 class FirebaseAuthMiddleware:
