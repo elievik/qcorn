@@ -48,6 +48,7 @@
             }
             .text-gradient {
                 background: linear-gradient(135deg, #fff 0%, #13b6ec 100%);
+                background-clip: text;
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
             }
@@ -69,22 +70,46 @@
                 }
             }
         </script>
-    </head>
-    <body class="bg-[#f8fafc] dark:bg-navy-900 text-slate-900 dark:text-slate-100 selection:bg-cyan-500/30">
-    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
-    <header class="sticky top-0 z-50 w-full border-b border-white/5 bg-navy-900/80 backdrop-blur-xl px-4 md:px-10 lg:px-40 py-4">
-    <div class="mx-auto flex max-w-7xl items-center justify-between">
+    </div>
     <div class="flex items-center gap-2 text-primary">
-    <div class="size-16 flex items-center justify-center">
-    <img src="{% static 'images/logo.png' %}" class="size-16 object-contain" alt="Logo">
+        <!-- Logo temporairement désactivé -->
+        <!-- <div class="size-16 flex items-center justify-center">
+        <img src="{% static 'images/logo.png' %}" class="size-16 object-contain" alt="Logo">
+        </div> -->
+        <h2 class="text-2xl font-extrabold tracking-tight text-white">QRoom</h2>
     </div>
-    <h2 class="text-2xl font-extrabold tracking-tight text-white">QRoom</h2>
     </div>
-    <nav class="hidden md:flex flex-1 justify-center gap-10">
-    <a class="text-sm font-semibold text-slate-300 hover:text-white transition-colors" href="#">Solutions</a>
-    <a class="text-sm font-semibold text-slate-300 hover:text-white transition-colors" href="#">Fonctionnement</a>
-    <a class="text-sm font-semibold text-slate-300 hover:text-white transition-colors" href="#">Tarifs</a>
-    </nav>
+<nav class="hidden md:flex flex-1 justify-center gap-10">
+<a class="text-sm font-semibold text-slate-300 hover:text-white transition-colors" href="#">Solutions</a>
+<a class="text-sm font-semibold text-slate-300 hover:text-white transition-colors" href="#">Fonctionnement</a>
+<a class="text-sm font-semibold text-slate-300 hover:text-white transition-colors" href="#">Tarifs</a>
+</nav>
+<div class="flex items-center gap-5">
+{% if user.is_authenticated %}
+    <a href="{% url 'dashboard' %}" class="hidden sm:inline-flex text-sm font-bold text-slate-300 hover:text-white transition-colors">Dashboard</a>
+{% else %}
+    <a href="{% url 'login' %}" class="hidden sm:inline-flex text-sm font-bold text-slate-300 hover:text-white transition-colors">Connexion</a>
+{% endif %}
+<a href="{% url 'register' %}" class="glow-button h-10 px-6 bg-primary text-white text-sm font-bold rounded-full shadow-lg shadow-primary/20 flex items-center">
+    Essai Gratuit
+</a>
+</div>
+</div>
+</header>
+<main class="flex-1">
+<section class="relative overflow-hidden hero-gradient pt-20 pb-24 md:pt-32 md:pb-40">
+<div class="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2"></div>
+<div class="absolute bottom-0 left-0 w-[400px] h-[400px] bg-cyan-500/10 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2"></div>
+<div class="mx-auto max-w-7xl px-4 md:px-10 relative z-10">
+<div class="flex flex-col lg:flex-row items-center gap-16 lg:gap-20">
+<div class="flex flex-col gap-8 lg:w-1/2 text-center lg:text-left">
+<div class="flex flex-col gap-6">
+<div class="inline-flex mx-auto lg:mx-0 w-fit items-center gap-2 rounded-full bg-white/5 border border-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-cyan-400">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+</span>
+    Nouveau : Sondages Ultra-Rapides
     <div class="flex items-center gap-5">
     {% if user.is_authenticated %}
         <a href="{% url 'dashboard' %}" class="hidden sm:inline-flex text-sm font-bold text-slate-300 hover:text-white transition-colors">Dashboard</a>
@@ -275,9 +300,10 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
     <div class="col-span-1 md:col-span-1 space-y-6">
     <div class="flex items-center gap-2 text-primary">
-    <img src="{% static 'images/logo.png' %}" class="size-16 object-contain" alt="Logo">
+        <!-- Logo temporairement désactivé -->
+        <!-- <img src="{% static 'images/logo.png' %}" class="size-16 object-contain" alt="Logo"> -->
         <h2 class="text-2xl font-extrabold text-navy-900 dark:text-white">QRoom</h2>
-    </div>
+        </div>
     <p class="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
                                 L'outil de référence pour l'interaction en direct. Performant, sécurisé et conçu pour l'engagement.
                             </p>
@@ -313,12 +339,13 @@
     <div class="flex flex-col md:flex-row items-center justify-between gap-8 pt-8 border-t border-slate-200 dark:border-white/5">
     <p class="text-sm text-slate-500">© 2026 QRoom Technologies. Made with passion for engagement.</p>
     <div class="flex gap-6">
-    <a class="text-slate-400 hover:text-primary transition-colors" href="#">
-        <img src="{% static 'images/logo.png' %}" class="w-12 h-12 object-contain" alt="Logo">
-    </a>
-    <a class="text-slate-400 hover:text-primary transition-colors" href="#">
-        <img src="{% static 'images/logo.png' %}" class="w-12 h-12 object-contain" alt="Logo">
-    </a>
+        <!-- Logos sociaux temporairement désactivés -->
+        <!-- <a class="text-slate-400 hover:text-primary transition-colors" href="#">
+            <img src="{% static 'images/logo.png' %}" class="w-12 h-12 object-contain" alt="Logo">
+        </a>
+        <a class="text-slate-400 hover:text-primary transition-colors" href="#">
+            <img src="{% static 'images/logo.png' %}" class="w-12 h-12 object-contain" alt="Logo">
+        </a> -->
     </div>
     </div>
     </div>
