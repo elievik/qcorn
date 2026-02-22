@@ -1,8 +1,0 @@
-[phases.setup]
-nixPkgs = ["nixpkgs.nix"]
-
-[phases.build]
-cmd = "pip install -r requirements.txt"
-
-[start]
-cmd = "gunicorn qcorn.wsgi:application --bind 0.0.0.0:$PORT --workers=3"
