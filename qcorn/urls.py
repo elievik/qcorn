@@ -20,7 +20,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from core.views import landing
 from django.http import HttpResponse
-from accounts.views import login_view, register_view, logout_view, firebase_login, firebase_register
+from accounts.views import login_view, register_view, logout_view
 from panels.views import dashboard_view, create_panel, toggle_question_status
 from panels import views
 
@@ -33,10 +33,6 @@ urlpatterns = [
     path('login/', login_view, name='login'),
     path('register/', register_view, name='register'),
     path('logout/', logout_view, name='logout'),
-    
-    # Firebase Authentication
-    path('api/auth/firebase-login/', firebase_login, name='firebase_login'),
-    path('api/auth/firebase-register/', firebase_register, name='firebase_register'),
 
     # Gestion d'un Panel spécifique (C'est ceux-là que ta sidebar utilise)
     path('create-panel/', create_panel, name='create_panel'),
